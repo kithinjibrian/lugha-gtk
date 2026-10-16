@@ -11,7 +11,9 @@ fun main(): i32 {
         let entry = Entry.new();
         entry.set_text("typed");
         let seen = Ref.new("");
-        entry.on_change(fun(text: string) { seen.set(text); });
+        entry.on_change(fun(text: string) {
+            seen.set(text);
+        });
         entry.set_text("changed");
         button.set_label("pressed");
         window.set_child(Box.column([label, button, entry]));
