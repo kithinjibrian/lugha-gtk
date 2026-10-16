@@ -1,0 +1,24 @@
+// Emitting a signal from code runs its handlers, as a user's click would.
+// Needs a display, so it is skipped without one.
+import std.env;
+import gtk.app;
+import gtk.raw;
+import gtk.widgets { Button };
+
+@test
+fun emitting_clicked_runs_the_handler() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let clicks = Ref.new(0);
+    app.run("org.lugha.test.emit", fun(a: app.Application) {
+        let button = Button.new("press");
+        button.on_click(fun() {
+            clicks.update(fun(n) = n + 1);
+        });
+        raw.emit_widget(button.handle(), "clicked");
+        raw.emit_widget(button.handle(), "clicked");
+        a.quit();
+    });
+    assert_eq(clicks.get(), 2);
+}

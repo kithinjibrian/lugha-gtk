@@ -52,12 +52,13 @@ lughac run examples/greeter.la
 lughac run test/smoke.la      # builds widgets, prints their text, quits without a window
 ```
 
-## What's covered (0.1.0)
+## What's covered (0.1.2)
 
 | Module | Items |
 | --- | --- |
 | `gtk.app` | `run(id, on_activate)`, `Application` (`quit`) |
 | `gtk.widgets` | the `Widget` interface; `Window` (`new`, `set_child`, `present`); `Box` (`row`, `column`, `append`, `margin`); `Button` (`new`, `label`, `set_label`, `on_click`, `margin`); `Label` (`new`, `text`, `set_text`, `margin`); `Entry` (`new`, `text`, `set_text`, `on_change`, `on_activate`, `margin`) |
+| `gtk.raw` | the C functions behind those, plus `gtk_box_remove`, `gtk_box_insert_child_after` (0.1.1) and `emit_widget(widget, signal)` to emit a no-argument signal such as `clicked` (0.1.2) |
 | `gtk.raw` | the GTK and GLib functions above as `public` externs, typed handles (`GtkApplication`, `GtkWidget`), and `connect_app`/`connect_widget` for any signal whose handler takes its object |
 
 Anything not wrapped yet can be declared next to your program the way `gtk.raw` does, or added here.
