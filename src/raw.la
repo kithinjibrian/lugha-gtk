@@ -1,0 +1,57 @@
+/**
+ * The C side of GTK 4 and GLib that this package wraps: typed handles and
+ * externs, each matching GTK 4's headers. Everything is `public`, for what
+ * the wrappers in `gtk.app` and `gtk.widgets` don't cover yet.
+ */
+
+/** A `GtkApplication *`. */
+public extern type GtkApplication;
+
+/** Any `GtkWidget *`: windows, boxes, buttons, labels, entries. GTK's casts between them are the same pointer. */
+public extern type GtkWidget;
+
+/** A `char **` argument vector; `None` passes `NULL`. */
+public extern type Argv;
+
+public extern fun gtk_application_new(id: string, flags: i32): GtkApplication;
+public extern fun g_application_run(app: GtkApplication, argc: i32, argv: Option<Argv>): i32;
+public extern fun g_application_quit(app: GtkApplication);
+public extern fun g_object_unref(object: GtkApplication);
+
+public extern fun gtk_application_window_new(app: GtkApplication): GtkWidget;
+public extern fun gtk_window_set_title(window: GtkWidget, title: string);
+public extern fun gtk_window_set_default_size(window: GtkWidget, width: i32, height: i32);
+public extern fun gtk_window_set_child(window: GtkWidget, child: GtkWidget);
+public extern fun gtk_window_present(window: GtkWidget);
+
+/** `orientation`: 0 horizontal, 1 vertical (`GtkOrientation`). */
+public extern fun gtk_box_new(orientation: i32, spacing: i32): GtkWidget;
+public extern fun gtk_box_append(box: GtkWidget, child: GtkWidget);
+
+public extern fun gtk_button_new_with_label(label: string): GtkWidget;
+public extern fun gtk_button_set_label(button: GtkWidget, label: string);
+public extern fun gtk_button_get_label(button: GtkWidget): Option<string>;
+
+public extern fun gtk_label_new(text: string): GtkWidget;
+public extern fun gtk_label_set_text(label: GtkWidget, text: string);
+public extern fun gtk_label_get_text(label: GtkWidget): string;
+
+public extern fun gtk_entry_new(): GtkWidget;
+public extern fun gtk_editable_get_text(editable: GtkWidget): string;
+public extern fun gtk_editable_set_text(editable: GtkWidget, text: string);
+
+public extern fun gtk_widget_set_margin_start(widget: GtkWidget, margin: i32);
+public extern fun gtk_widget_set_margin_end(widget: GtkWidget, margin: i32);
+public extern fun gtk_widget_set_margin_top(widget: GtkWidget, margin: i32);
+public extern fun gtk_widget_set_margin_bottom(widget: GtkWidget, margin: i32);
+
+// `g_signal_connect_data` once per handler shape: GTK calls every signal
+// handler with its object first and the user data last.
+
+/** Connects a handler taking the application, such as `activate`. */
+public extern "g_signal_connect_data" fun connect_app(instance: GtkApplication, signal: string,
+    handler: fun(GtkApplication, data), user: data, destroy: release, flags: i32): u64;
+
+/** Connects a handler taking the widget, such as `clicked`, `changed` and `activate`. */
+public extern "g_signal_connect_data" fun connect_widget(instance: GtkWidget, signal: string,
+    handler: fun(GtkWidget, data), user: data, destroy: release, flags: i32): u64;

@@ -1,0 +1,167 @@
+/** Windows and widgets, as Lugha types with methods; signals take closures. */
+
+import raw;
+import app { Application };
+
+/** Anything GTK can show: every widget here is one, so containers take any of them. */
+public interface Widget {
+    /** The `GtkWidget *`, for `gtk.raw`. */
+    fun handle(self): raw.GtkWidget;
+}
+
+/** Leaves `px` pixels of space on all four sides of `w`. */
+fun set_margin(w: raw.GtkWidget, px: i32) {
+    raw.gtk_widget_set_margin_start(w, px);
+    raw.gtk_widget_set_margin_end(w, px);
+    raw.gtk_widget_set_margin_top(w, px);
+    raw.gtk_widget_set_margin_bottom(w, px);
+}
+
+/** A top-level window of an application. */
+public struct Window { ptr: raw.GtkWidget }
+
+impl Window {
+    /** A new window of `application`, titled `title`, `width` by `height` pixels to start with. */
+    public fun new(application: Application, title: string, width: i32, height: i32): Window {
+        let w = raw.gtk_application_window_new(application.handle());
+        raw.gtk_window_set_title(w, title);
+        raw.gtk_window_set_default_size(w, width, height);
+        Window { ptr: w }
+    }
+
+    /** Makes `child` the window's content. */
+    public fun set_child(self, child: Widget) {
+        raw.gtk_window_set_child(self.ptr, child.handle());
+    }
+
+    /** Shows the window. */
+    public fun present(self) {
+        raw.gtk_window_present(self.ptr);
+    }
+
+    /** The `GtkWidget *`, for `gtk.raw`. */
+    public fun handle(self): raw.GtkWidget = self.ptr;
+}
+
+/** Widgets in a row or a column, 6 pixels apart. */
+public struct Box { ptr: raw.GtkWidget }
+
+impl Box {
+    /** `children` side by side. */
+    public fun row(children: Widget[]): Box = Box.laid_out(0, children);
+
+    /** `children` one above another. */
+    public fun column(children: Widget[]): Box = Box.laid_out(1, children);
+
+    fun laid_out(orientation: i32, children: Widget[]): Box {
+        let b = raw.gtk_box_new(orientation, 6);
+        for child of children {
+            raw.gtk_box_append(b, child.handle());
+        }
+        Box { ptr: b }
+    }
+
+    /** Adds `child` at the end. */
+    public fun append(self, child: Widget) {
+        raw.gtk_box_append(self.ptr, child.handle());
+    }
+
+    /** The `GtkWidget *`, for `gtk.raw`. */
+    public fun handle(self): raw.GtkWidget = self.ptr;
+
+    /** Leaves `px` pixels of space on all four sides. */
+    public fun margin(self, px: i32) {
+        set_margin(self.ptr, px);
+    }
+}
+
+/** A button with a text label. */
+public struct Button { ptr: raw.GtkWidget }
+
+impl Button {
+    /** A new button showing `label`. */
+    public fun new(label: string): Button = Button { ptr: raw.gtk_button_new_with_label(label) };
+
+    /** The text it shows. */
+    public fun label(self): string = raw.gtk_button_get_label(self.ptr).unwrap_or("");
+
+    /** Changes the text it shows. */
+    public fun set_label(self, label: string) {
+        raw.gtk_button_set_label(self.ptr, label);
+    }
+
+    /** Calls `f` each time the button is clicked. */
+    public fun on_click(self, f: fun()) {
+        raw.connect_widget(self.ptr, "clicked", fun(b: raw.GtkWidget) { f(); }, 0);
+    }
+
+    /** The `GtkWidget *`, for `gtk.raw`. */
+    public fun handle(self): raw.GtkWidget = self.ptr;
+
+    /** Leaves `px` pixels of space on all four sides. */
+    public fun margin(self, px: i32) {
+        set_margin(self.ptr, px);
+    }
+}
+
+/** A line of text. */
+public struct Label { ptr: raw.GtkWidget }
+
+impl Label {
+    /** A new label showing `text`. */
+    public fun new(text: string): Label = Label { ptr: raw.gtk_label_new(text) };
+
+    /** The text it shows. */
+    public fun text(self): string = raw.gtk_label_get_text(self.ptr);
+
+    /** Changes the text it shows. */
+    public fun set_text(self, text: string) {
+        raw.gtk_label_set_text(self.ptr, text);
+    }
+
+    /** The `GtkWidget *`, for `gtk.raw`. */
+    public fun handle(self): raw.GtkWidget = self.ptr;
+
+    /** Leaves `px` pixels of space on all four sides. */
+    public fun margin(self, px: i32) {
+        set_margin(self.ptr, px);
+    }
+}
+
+/** A one-line text field. */
+public struct Entry { ptr: raw.GtkWidget }
+
+impl Entry {
+    /** A new, empty entry. */
+    public fun new(): Entry = Entry { ptr: raw.gtk_entry_new() };
+
+    /** Its text. */
+    public fun text(self): string = raw.gtk_editable_get_text(self.ptr);
+
+    /** Replaces its text. */
+    public fun set_text(self, text: string) {
+        raw.gtk_editable_set_text(self.ptr, text);
+    }
+
+    /** Calls `f` with the new text each time it changes. */
+    public fun on_change(self, f: fun(string)) {
+        raw.connect_widget(self.ptr, "changed", fun(e: raw.GtkWidget) {
+            f(raw.gtk_editable_get_text(e));
+        }, 0);
+    }
+
+    /** Calls `f` with the text when Enter is pressed in it. */
+    public fun on_activate(self, f: fun(string)) {
+        raw.connect_widget(self.ptr, "activate", fun(e: raw.GtkWidget) {
+            f(raw.gtk_editable_get_text(e));
+        }, 0);
+    }
+
+    /** The `GtkWidget *`, for `gtk.raw`. */
+    public fun handle(self): raw.GtkWidget = self.ptr;
+
+    /** Leaves `px` pixels of space on all four sides. */
+    public fun margin(self, px: i32) {
+        set_margin(self.ptr, px);
+    }
+}

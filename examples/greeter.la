@@ -1,0 +1,18 @@
+// Greets whatever name is typed: text going to GTK and coming back.
+import gtk.app;
+import gtk.widgets { Window, Box, Entry, Label };
+
+fun main(): i32 {
+    app.run("org.lugha.greeter", fun(a: app.Application) {
+        let window = Window.new(a, "Greeter", 360, 140);
+        let entry = Entry.new();
+        let greeting = Label.new("Type your name");
+        entry.on_change(fun(name: string) {
+            greeting.set_text(if name.len == 0 { "Type your name" } else { "Hello, {name}!" });
+        });
+        let content = Box.column([entry, greeting]);
+        content.margin(24);
+        window.set_child(content);
+        window.present();
+    })
+}

@@ -1,0 +1,24 @@
+// Builds widgets, reads their text back through GTK, and quits without
+// showing a window: a check that the bindings work on this machine.
+import gtk.app;
+import gtk.widgets { Window, Box, Button, Entry, Label };
+
+fun main(): i32 {
+    app.run("org.lugha.smoke", fun(a: app.Application) {
+        let window = Window.new(a, "Smoke", 100, 100);
+        let label = Label.new("héllo");
+        let button = Button.new("press");
+        let entry = Entry.new();
+        entry.set_text("typed");
+        let seen = Ref.new("");
+        entry.on_change(fun(text: string) { seen.set(text); });
+        entry.set_text("changed");
+        button.set_label("pressed");
+        window.set_child(Box.column([label, button, entry]));
+        println(label.text());
+        println(button.label());
+        println(entry.text());
+        println(seen.get());
+        a.quit();
+    })
+}

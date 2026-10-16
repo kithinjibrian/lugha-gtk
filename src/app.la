@@ -1,0 +1,31 @@
+/** Running a GTK application. */
+
+import raw;
+
+/** A running GTK application, handed to `run`'s `on_activate`. */
+public struct Application { ptr: raw.GtkApplication }
+
+impl Application {
+    /** The `GtkApplication *`, for `gtk.raw`. */
+    public fun handle(self): raw.GtkApplication = self.ptr;
+
+    /** Ends the application once the current event is handled. */
+    public fun quit(self) {
+        raw.g_application_quit(self.ptr);
+    }
+}
+
+/**
+ * Starts the GTK application `id` (reverse-DNS, such as `"org.lugha.counter"`)
+ * and runs until its last window closes. `on_activate` builds the first window.
+ * @returns GTK's exit status, for `main` to return.
+ */
+public fun run(id: string, on_activate: fun(Application)): i32 {
+    let handle = raw.gtk_application_new(id, 0);
+    raw.connect_app(handle, "activate", fun(a: raw.GtkApplication) {
+        on_activate(Application { ptr: a });
+    }, 0);
+    let status = raw.g_application_run(handle, 0, None);
+    raw.g_object_unref(handle);
+    status
+}

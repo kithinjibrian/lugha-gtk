@@ -1,0 +1,4 @@
+# Programs built from the examples
+/examples/counter
+/examples/greeter
+/test/smoke
