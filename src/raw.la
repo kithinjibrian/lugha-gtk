@@ -57,9 +57,21 @@ public extern fun gtk_widget_set_margin_bottom(widget: GtkWidget, margin: i32);
 // handler with its object first and the user data last.
 
 /** Connects a handler taking the application, such as `activate`. */
-public extern "g_signal_connect_data" fun connect_app(instance: GtkApplication, signal: string,
-    handler: fun(GtkApplication, data), user: data, destroy: release, flags: i32): u64;
+public extern "g_signal_connect_data" fun connect_app(
+    instance: GtkApplication,
+    signal: string,
+    handler: fun(GtkApplication, data),
+    user: data,
+    destroy: release,
+    flags: i32,
+): u64;
 
 /** Connects a handler taking the widget, such as `clicked`, `changed` and `activate`. */
-public extern "g_signal_connect_data" fun connect_widget(instance: GtkWidget, signal: string,
-    handler: fun(GtkWidget, data), user: data, destroy: release, flags: i32): u64;
+public extern "g_signal_connect_data" fun connect_widget(
+    instance: GtkWidget,
+    signal: string,
+    handler: fun(GtkWidget, data),
+    user: data,
+    destroy: release,
+    flags: i32,
+): u64;

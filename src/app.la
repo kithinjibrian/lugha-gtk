@@ -3,7 +3,9 @@
 import raw;
 
 /** A running GTK application, handed to `run`'s `on_activate`. */
-public struct Application { ptr: raw.GtkApplication }
+public struct Application {
+    ptr: raw.GtkApplication,
+}
 
 impl Application {
     /** The `GtkApplication *`, for `gtk.raw`. */
@@ -22,9 +24,14 @@ impl Application {
  */
 public fun run(id: string, on_activate: fun(Application)): i32 {
     let handle = raw.gtk_application_new(id, 0);
-    raw.connect_app(handle, "activate", fun(a: raw.GtkApplication) {
-        on_activate(Application { ptr: a });
-    }, 0);
+    raw.connect_app(
+        handle,
+        "activate",
+        fun(a: raw.GtkApplication) {
+            on_activate(Application { ptr: a });
+        },
+        0,
+    );
     let status = raw.g_application_run(handle, 0, None);
     raw.g_object_unref(handle);
     status

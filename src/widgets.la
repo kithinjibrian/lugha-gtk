@@ -18,7 +18,9 @@ fun set_margin(w: raw.GtkWidget, px: i32) {
 }
 
 /** A top-level window of an application. */
-public struct Window { ptr: raw.GtkWidget }
+public struct Window {
+    ptr: raw.GtkWidget,
+}
 
 impl Window {
     /** A new window of `application`, titled `title`, `width` by `height` pixels to start with. */
@@ -44,7 +46,9 @@ impl Window {
 }
 
 /** Widgets in a row or a column, 6 pixels apart. */
-public struct Box { ptr: raw.GtkWidget }
+public struct Box {
+    ptr: raw.GtkWidget,
+}
 
 impl Box {
     /** `children` side by side. */
@@ -76,7 +80,9 @@ impl Box {
 }
 
 /** A button with a text label. */
-public struct Button { ptr: raw.GtkWidget }
+public struct Button {
+    ptr: raw.GtkWidget,
+}
 
 impl Button {
     /** A new button showing `label`. */
@@ -92,7 +98,14 @@ impl Button {
 
     /** Calls `f` each time the button is clicked. */
     public fun on_click(self, f: fun()) {
-        raw.connect_widget(self.ptr, "clicked", fun(b: raw.GtkWidget) { f(); }, 0);
+        raw.connect_widget(
+            self.ptr,
+            "clicked",
+            fun(b: raw.GtkWidget) {
+                f();
+            },
+            0,
+        );
     }
 
     /** The `GtkWidget *`, for `gtk.raw`. */
@@ -105,7 +118,9 @@ impl Button {
 }
 
 /** A line of text. */
-public struct Label { ptr: raw.GtkWidget }
+public struct Label {
+    ptr: raw.GtkWidget,
+}
 
 impl Label {
     /** A new label showing `text`. */
@@ -129,7 +144,9 @@ impl Label {
 }
 
 /** A one-line text field. */
-public struct Entry { ptr: raw.GtkWidget }
+public struct Entry {
+    ptr: raw.GtkWidget,
+}
 
 impl Entry {
     /** A new, empty entry. */
@@ -145,16 +162,26 @@ impl Entry {
 
     /** Calls `f` with the new text each time it changes. */
     public fun on_change(self, f: fun(string)) {
-        raw.connect_widget(self.ptr, "changed", fun(e: raw.GtkWidget) {
-            f(raw.gtk_editable_get_text(e));
-        }, 0);
+        raw.connect_widget(
+            self.ptr,
+            "changed",
+            fun(e: raw.GtkWidget) {
+                f(raw.gtk_editable_get_text(e));
+            },
+            0,
+        );
     }
 
     /** Calls `f` with the text when Enter is pressed in it. */
     public fun on_activate(self, f: fun(string)) {
-        raw.connect_widget(self.ptr, "activate", fun(e: raw.GtkWidget) {
-            f(raw.gtk_editable_get_text(e));
-        }, 0);
+        raw.connect_widget(
+            self.ptr,
+            "activate",
+            fun(e: raw.GtkWidget) {
+                f(raw.gtk_editable_get_text(e));
+            },
+            0,
+        );
     }
 
     /** The `GtkWidget *`, for `gtk.raw`. */
