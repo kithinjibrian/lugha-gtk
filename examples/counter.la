@@ -1,9 +1,8 @@
 // A window with a button that counts its clicks.
-import gtk.app;
-import gtk.widgets { Window, Box, Button, Label };
+import gtk { Application, Box, Button, Label, Window, run };
 
 fun main(): i32 {
-    app.run("org.lugha.counter", fun(a: app.Application) {
+    run("org.lugha.counter", fun(a: Application) {
         let window = Window.new(a, "Counter", 320, 160);
         let label = Label.new("0");
         let button = Button.new("add one");

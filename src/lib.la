@@ -1,0 +1,8 @@
+/**
+ * GTK 4 for Lugha. `import gtk;` (or `import gtk { run, Window, … };`) gives
+ * the application loop and the widgets; `gtk.raw` stays a module of its own,
+ * for the C functions underneath.
+ */
+
+public import app { Application, run };
+public import widgets { Widget, Window, Box, Button, Label, Entry };

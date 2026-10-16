@@ -1,10 +1,9 @@
 // Builds widgets, reads their text back through GTK, and quits without
 // showing a window: a check that the bindings work on this machine.
-import gtk.app;
-import gtk.widgets { Window, Box, Button, Entry, Label };
+import gtk { Application, Box, Button, Entry, Label, Window, run };
 
 fun main(): i32 {
-    app.run("org.lugha.smoke", fun(a: app.Application) {
+    run("org.lugha.smoke", fun(a: Application) {
         let window = Window.new(a, "Smoke", 100, 100);
         let label = Label.new("héllo");
         let button = Button.new("press");

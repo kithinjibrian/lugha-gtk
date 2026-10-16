@@ -1,9 +1,8 @@
 // Emitting a signal from code runs its handlers, as a user's click would.
 // Needs a display, so it is skipped without one.
 import std.env;
-import gtk.app;
+import gtk { Application, Button, run };
 import gtk.raw;
-import gtk.widgets { Button };
 
 @test
 fun emitting_clicked_runs_the_handler() {
@@ -11,7 +10,7 @@ fun emitting_clicked_runs_the_handler() {
         skip("no display");
     }
     let clicks = Ref.new(0);
-    app.run("org.lugha.test.emit", fun(a: app.Application) {
+    run("org.lugha.test.emit", fun(a: Application) {
         let button = Button.new("press");
         button.on_click(fun() {
             clicks.update(fun(n) = n + 1);
