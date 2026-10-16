@@ -5,4 +5,4 @@ source = "src"
 
 [link]
 pkg-config = ["gtk4"]
-c = ["c/signals.c"]
+c = ["src/c/signals.c"]

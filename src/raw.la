@@ -59,7 +59,7 @@ public extern fun gtk_widget_set_margin_bottom(widget: GtkWidget, margin: i32);
 /**
  * Emits `signal` on `instance` as if the user had acted, for signals with no
  * arguments and no result such as `clicked` or `activate`. Handlers run before
- * it returns. (`c/signals.c` wraps the variadic `g_signal_emit_by_name`, which
+ * it returns. (`src/c/signals.c` wraps the variadic `g_signal_emit_by_name`, which
  * Lugha can't declare.)
  */
 public extern "lgtk_emit" fun emit_widget(instance: GtkWidget, signal: string);
