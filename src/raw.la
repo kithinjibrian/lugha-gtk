@@ -27,6 +27,14 @@ public extern fun gtk_window_present(window: GtkWidget);
 /** `orientation`: 0 horizontal, 1 vertical (`GtkOrientation`). */
 public extern fun gtk_box_new(orientation: i32, spacing: i32): GtkWidget;
 public extern fun gtk_box_append(box: GtkWidget, child: GtkWidget);
+/** Takes `child` out of `box`. */
+public extern fun gtk_box_remove(box: GtkWidget, child: GtkWidget);
+/** Puts `child` into `box` right after `sibling`, or first when `sibling` is `None`. */
+public extern fun gtk_box_insert_child_after(
+    box: GtkWidget,
+    child: GtkWidget,
+    sibling: Option<GtkWidget>,
+);
 
 public extern fun gtk_button_new_with_label(label: string): GtkWidget;
 public extern fun gtk_button_set_label(button: GtkWidget, label: string);
