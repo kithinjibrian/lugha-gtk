@@ -16,20 +16,12 @@ fun expanding_separators_and_scrolling_read_back() {
         let line = raw.gtk_separator_new(1);
         let scrolled = raw.gtk_scrolled_window_new();
         let label = raw.gtk_label_new("inside");
-        let empty: i32 = if raw.gtk_scrolled_window_get_child(scrolled).is_none() {
-            1
-        } else {
-            0
-        };
+        let empty: i32 = if raw.gtk_scrolled_window_get_child(scrolled).is_none() { 1 } else { 0 };
         raw.gtk_scrolled_window_set_child(scrolled, Some(label));
         // A label can't scroll itself, so GTK wraps it in a GtkViewport: the
         // scrolled window's child is that viewport, not the label.
         let wrapped: i32 = match raw.gtk_scrolled_window_get_child(scrolled) {
-            Some(w) => if w == label {
-                0
-            } else {
-                1
-            },
+            Some(w) => if w == label { 0 } else { 1 },
             None => 0,
         };
         seen.set([
