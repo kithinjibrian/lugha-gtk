@@ -10,6 +10,12 @@ public extern type PangoAttrList;
 /** A `PangoAttribute *`, owned by the list it's inserted into. */
 public extern type PangoAttribute;
 
+/** A `GtkTextBuffer *`: the text a `GtkTextView` shows. */
+public extern type GtkTextBuffer;
+
+/** A `char *` C allocated for the caller: read it with `lgtk_cstring_text`, then `g_free` it. */
+public extern type OwnedText;
+
 /** A `GtkApplication *`. */
 public extern type GtkApplication;
 
@@ -210,3 +216,33 @@ public extern "g_object_weak_ref" fun on_finalized(
     notify: fun(data, GtkWidget),
     user: data,
 );
+
+// GtkTextView, a multi-line editor, and its buffer. Iterator work happens in
+// src/c/text.c (GtkTextIter is a struct passed by pointer).
+public extern fun gtk_text_view_new(): GtkWidget;
+public extern fun gtk_text_view_get_buffer(view: GtkWidget): GtkTextBuffer;
+/** `GtkWrapMode`: 0 none, 1 char, 2 word, 3 word, else char. */
+public extern fun gtk_text_view_set_wrap_mode(view: GtkWidget, mode: i32);
+public extern fun gtk_text_view_get_wrap_mode(view: GtkWidget): i32;
+/** Replaces the buffer's text; `length` -1 means all of `text`. */
+public extern fun gtk_text_buffer_set_text(buffer: GtkTextBuffer, text: string, length: i32);
+/** All of the buffer's text, allocated for the caller (src/c/text.c). */
+public extern fun lgtk_text_get(buffer: GtkTextBuffer): OwnedText;
+/** The text of an `OwnedText`, copied into a Lugha string; `g_free` it after. */
+public extern fun lgtk_cstring_text(text: OwnedText): string;
+/** The cursor's position in characters (src/c/text.c). */
+public extern fun lgtk_text_cursor(buffer: GtkTextBuffer): i32;
+/** Puts the cursor at `offset` characters, or at the end when the text is shorter (src/c/text.c). */
+public extern fun lgtk_text_place_cursor(buffer: GtkTextBuffer, offset: i32);
+/** Frees memory GLib or GTK allocated for the caller. */
+public extern fun g_free(memory: OwnedText);
+
+/** Connects a handler taking the buffer, such as a text buffer's `changed`. */
+public extern "g_signal_connect_data" fun connect_buffer(
+    instance: GtkTextBuffer,
+    signal: string,
+    handler: fun(GtkTextBuffer, data),
+    user: data,
+    destroy: release,
+    flags: i32,
+): u64;

@@ -1,0 +1,65 @@
+// A text view and its buffer: text set and read back (with the C copy
+// freed), the cursor read and placed, "changed" firing, word wrapping. Needs
+// a display.
+import std.env;
+import gtk {
+    Application,
+    GtkTextBuffer,
+    connect_buffer,
+    g_free,
+    gtk_text_buffer_set_text,
+    gtk_text_view_get_buffer,
+    gtk_text_view_get_wrap_mode,
+    gtk_text_view_new,
+    gtk_text_view_set_wrap_mode,
+    lgtk_cstring_text,
+    lgtk_text_cursor,
+    lgtk_text_get,
+    lgtk_text_place_cursor,
+    run,
+};
+
+// The buffer's whole text, as a Lugha string; the C copy is freed.
+fun text_of(buffer: GtkTextBuffer): string {
+    let owned = lgtk_text_get(buffer);
+    let s = lgtk_cstring_text(owned);
+    g_free(owned);
+    s
+}
+
+@test
+fun a_text_view_reads_back_and_moves_its_cursor() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.textview", fun(a: Application) {
+        let view = gtk_text_view_new();
+        gtk_text_view_set_wrap_mode(view, 3);
+        note("wrap {gtk_text_view_get_wrap_mode(view)}");
+        let buffer = gtk_text_view_get_buffer(view);
+        connect_buffer(
+            buffer,
+            "changed",
+            fun(b: GtkTextBuffer) {
+                note("changed: {text_of(b)}");
+            },
+            0,
+        );
+        gtk_text_buffer_set_text(buffer, "héllo\nworld", -1);
+        lgtk_text_place_cursor(buffer, 3);
+        note("cursor {lgtk_text_cursor(buffer)}");
+        // Past the end clamps to the end (11 characters).
+        lgtk_text_place_cursor(buffer, 99);
+        note("cursor {lgtk_text_cursor(buffer)}");
+        a.quit();
+    });
+    assert_eq(seen.get(), ["wrap 3", "changed: héllo\nworld", "cursor 3", "cursor 11"]);
+}

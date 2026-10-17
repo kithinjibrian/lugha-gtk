@@ -1,8 +1,8 @@
 [package]
 name = "gtk"
-version = "0.1.14"
+version = "0.1.15"
 source = "src"
 
 [link]
 pkg-config = ["gtk4"]
-c = ["src/c/signals.c"]
+c = ["src/c/signals.c", "src/c/text.c"]
