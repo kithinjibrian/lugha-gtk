@@ -1,0 +1,84 @@
+// A shortcut controller on a button: a parsed trigger and a callback action
+// that runs when the shortcut fires; focus grabbed and read back. Needs a
+// display.
+import std.env;
+import gtk {
+    Application,
+    GVariant,
+    GtkShortcutAction,
+    GtkWidget,
+    gtk_application_window_new,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_button_new_with_label,
+    gtk_callback_action_new,
+    gtk_entry_new,
+    gtk_root_get_focus,
+    gtk_shortcut_action_activate,
+    gtk_shortcut_action_ref,
+    gtk_shortcut_controller_add_shortcut,
+    gtk_shortcut_controller_new,
+    gtk_shortcut_controller_set_scope,
+    gtk_shortcut_new,
+    gtk_shortcut_trigger_parse_string,
+    gtk_widget_add_controller,
+    gtk_widget_grab_focus,
+    gtk_widget_is_ancestor,
+    gtk_window_set_child,
+    run,
+};
+
+@test
+fun a_shortcut_runs_its_action_and_focus_reads_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.shortcuts", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let box = gtk_box_new(1, 0);
+        let entry = gtk_entry_new();
+        let button = gtk_button_new_with_label("Add");
+        gtk_box_append(box, entry);
+        gtk_box_append(box, button);
+        gtk_window_set_child(window, box);
+        note("bad parses: {gtk_shortcut_trigger_parse_string("<Control>nope").is_none()}");
+        // A callback action: works whether or not the window is on screen.
+        let action = gtk_callback_action_new(fun(w: GtkWidget, args: Option<GVariant>): i32 {
+            note("shortcut on {if w == button { "the button" } else { "something else" }}");
+            1
+        });
+        let controller = gtk_shortcut_controller_new();
+        gtk_shortcut_controller_set_scope(controller, 2);
+        match gtk_shortcut_trigger_parse_string("<Control>n") {
+            Some(trigger) => gtk_shortcut_controller_add_shortcut(
+                controller,
+                gtk_shortcut_new(trigger, gtk_shortcut_action_ref(action)),
+            ),
+            None => note("no trigger"),
+        }
+        gtk_widget_add_controller(button, controller);
+        gtk_widget_grab_focus(entry);
+        let focused = match gtk_root_get_focus(window) {
+            // An entry hands focus to the text widget inside it.
+            Some(w) => if w == entry || gtk_widget_is_ancestor(w, entry) != 0 {
+                "entry"
+            } else {
+                "other"
+            },
+            None => "none",
+        };
+        note("focus {focused}");
+        // What GTK does when the keys are pressed.
+        gtk_shortcut_action_activate(action, 0, button, None);
+        a.quit();
+    });
+    assert_eq(seen.get(), ["bad parses: true", "focus entry", "shortcut on the button"]);
+}

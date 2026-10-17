@@ -16,6 +16,21 @@ public extern type GtkTextBuffer;
 /** A `char *` C allocated for the caller: read it with `lgtk_cstring_text`, then `g_free` it. */
 public extern type OwnedText;
 
+/** A `GtkEventController *` (a `GtkShortcutController` here): input handling attached to a widget. */
+public extern type GtkEventController;
+
+/** A `GtkShortcut *`: a trigger and the action it runs. */
+public extern type GtkShortcut;
+
+/** A `GtkShortcutTrigger *`, such as a key combination. */
+public extern type GtkShortcutTrigger;
+
+/** A `GtkShortcutAction *`, such as activating a widget. */
+public extern type GtkShortcutAction;
+
+/** A `GVariant *`: arguments GTK may hand a shortcut's callback. */
+public extern type GVariant;
+
 /** A `GtkApplication *`. */
 public extern type GtkApplication;
 
@@ -271,3 +286,58 @@ public extern "g_signal_connect_data" fun connect_buffer(
     destroy: release,
     flags: i32,
 ): u64;
+
+// Keyboard shortcuts (GtkShortcutController) and focus.
+
+public extern fun gtk_shortcut_controller_new(): GtkEventController;
+/** `GtkShortcutScope`: 0 local, 1 managed, 2 global (anywhere in the window). */
+public extern fun gtk_shortcut_controller_set_scope(controller: GtkEventController, scope: i32);
+/** Adds `shortcut`; the controller takes ownership of it. */
+public extern fun gtk_shortcut_controller_add_shortcut(
+    controller: GtkEventController,
+    shortcut: GtkShortcut,
+);
+public extern fun gtk_shortcut_controller_remove_shortcut(
+    controller: GtkEventController,
+    shortcut: GtkShortcut,
+);
+/** Attaches `controller` to `widget`, which takes ownership of it. */
+public extern fun gtk_widget_add_controller(widget: GtkWidget, controller: GtkEventController);
+/** A shortcut running `action` on `trigger`; it takes ownership of both. */
+public extern fun gtk_shortcut_new(
+    trigger: GtkShortcutTrigger,
+    action: GtkShortcutAction,
+): GtkShortcut;
+/**
+ * An action calling `callback` with the widget the shortcut belongs to; it
+ * returns 1 when it handled the key. Works on widgets not yet on screen,
+ * unlike GTK's activate action. The closure is released with the action.
+ */
+public extern fun gtk_callback_action_new(
+    callback: fun(GtkWidget, Option<GVariant>, data): i32,
+    user: data,
+    destroy: release,
+): GtkShortcutAction;
+/** GTK's accelerator syntax (`<Control>n`); `None` when it can't be parsed. */
+public extern fun gtk_shortcut_trigger_parse_string(text: string): Option<GtkShortcutTrigger>;
+/** The action that activates the widget the shortcut belongs to (GTK keeps it: don't free). */
+public extern fun gtk_activate_action_get(): GtkShortcutAction;
+/** A new reference to `action`, for handing it to something that takes ownership. */
+public extern "g_object_ref" fun gtk_shortcut_action_ref(
+    action: GtkShortcutAction,
+): GtkShortcutAction;
+/** Runs `action` on `widget` as a shortcut would (`flags` 0, no arguments); 1 if it did something. */
+public extern fun gtk_shortcut_action_activate(
+    action: GtkShortcutAction,
+    flags: i32,
+    widget: GtkWidget,
+    args: Option<GVariant>,
+): i32;
+
+/** Gives `widget` keyboard focus; 1 if it took it. */
+public extern fun gtk_widget_grab_focus(widget: GtkWidget): i32;
+/** Whether `widget` is inside `ancestor` (a child, grandchild, …); `gboolean` as `i32`. */
+public extern fun gtk_widget_is_ancestor(widget: GtkWidget, ancestor: GtkWidget): i32;
+
+/** The widget with keyboard focus in `window`, if any; a text field's focus sits on a widget inside it. */
+public extern fun gtk_root_get_focus(window: GtkWidget): Option<GtkWidget>;
