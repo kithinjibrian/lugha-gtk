@@ -1,5 +1,5 @@
-// Pango attributes on a label and CSS classes on a widget, read back. Needs a
-// display.
+// Pango attributes on a label, and CSS classes and sensitivity on a widget,
+// read back. Needs a display.
 import std.env;
 import gtk {
     Application,
@@ -7,7 +7,9 @@ import gtk {
     gtk_label_new,
     gtk_label_set_attributes,
     gtk_widget_add_css_class,
+    gtk_widget_get_sensitive,
     gtk_widget_has_css_class,
+    gtk_widget_set_sensitive,
     gtk_widget_remove_css_class,
     pango_attr_list_insert,
     pango_attr_list_new,
@@ -41,7 +43,11 @@ fun label_attributes_and_css_classes_read_back() {
         let has = gtk_widget_has_css_class(label, "dim-label");
         gtk_widget_remove_css_class(label, "dim-label");
         let gone = gtk_widget_has_css_class(label, "dim-label");
-        seen.set([set, cleared, "{has} {gone}"]);
+        gtk_widget_set_sensitive(label, 0);
+        let off = gtk_widget_get_sensitive(label);
+        gtk_widget_set_sensitive(label, 1);
+        let on = gtk_widget_get_sensitive(label);
+        seen.set([set, cleared, "{has} {gone}", "{off} {on}"]);
         a.quit();
     });
     let got = seen.get();
@@ -49,4 +55,5 @@ fun label_attributes_and_css_classes_read_back() {
     assert(got[0].contains("size 18432"));
     assert_eq(got[1], "cleared");
     assert_eq(got[2], "1 0");
+    assert_eq(got[3], "0 1");
 }

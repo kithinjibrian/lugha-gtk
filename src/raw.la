@@ -106,6 +106,10 @@ public extern fun gtk_widget_add_css_class(widget: GtkWidget, class: string);
 public extern fun gtk_widget_remove_css_class(widget: GtkWidget, class: string);
 public extern fun gtk_widget_has_css_class(widget: GtkWidget, class: string): i32;
 
+/** Whether a widget responds to the user; an insensitive one is greyed out. `gboolean` as `i32`. */
+public extern fun gtk_widget_set_sensitive(widget: GtkWidget, sensitive: i32);
+public extern fun gtk_widget_get_sensitive(widget: GtkWidget): i32;
+
 // Expanding: a widget given spare room along an axis (`gboolean` as `i32`).
 public extern fun gtk_widget_set_hexpand(widget: GtkWidget, expand: i32);
 public extern fun gtk_widget_get_hexpand(widget: GtkWidget): i32;
