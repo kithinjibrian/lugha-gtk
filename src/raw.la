@@ -4,6 +4,12 @@
  * the wrappers in `gtk.app` and `gtk.widgets` don't cover yet.
  */
 
+/** A `PangoAttrList *`: text attributes (weight, size, …) for a label. */
+public extern type PangoAttrList;
+
+/** A `PangoAttribute *`, owned by the list it's inserted into. */
+public extern type PangoAttribute;
+
 /** A `GtkApplication *`. */
 public extern type GtkApplication;
 
@@ -52,6 +58,20 @@ public extern fun gtk_button_get_label(button: GtkWidget): Option<string>;
 public extern fun gtk_label_new(text: string): GtkWidget;
 public extern fun gtk_label_set_text(label: GtkWidget, text: string);
 public extern fun gtk_label_get_text(label: GtkWidget): string;
+/** Sets (or, with `None`, clears) a label's text attributes; the label keeps its own reference. */
+public extern fun gtk_label_set_attributes(label: GtkWidget, attrs: Option<PangoAttrList>);
+public extern fun gtk_label_get_attributes(label: GtkWidget): Option<PangoAttrList>;
+
+// Pango text attributes. Sizes are points times PANGO_SCALE (1024); weights
+// are PangoWeight numbers (400 normal, 700 bold).
+public extern fun pango_attr_list_new(): PangoAttrList;
+public extern fun pango_attr_list_unref(list: PangoAttrList);
+/** Adds `attr` to `list`, which takes ownership of it. */
+public extern fun pango_attr_list_insert(list: PangoAttrList, attr: PangoAttribute);
+/** The list as text, such as `0 4294967295 weight bold`; for tests and debugging (Lugha copies the string and never frees Pango's, a small leak per call). */
+public extern fun pango_attr_list_to_string(list: PangoAttrList): string;
+public extern fun pango_attr_weight_new(weight: i32): PangoAttribute;
+public extern fun pango_attr_size_new(size: i32): PangoAttribute;
 
 public extern fun gtk_entry_new(): GtkWidget;
 public extern fun gtk_editable_get_text(editable: GtkWidget): string;
@@ -79,6 +99,12 @@ public extern fun gtk_widget_get_valign(widget: GtkWidget): i32;
 
 /** The smallest size `widget` may be given, in pixels; -1 leaves a side to the widget. */
 public extern fun gtk_widget_set_size_request(widget: GtkWidget, width: i32, height: i32);
+
+// CSS classes: how the theme styles a widget (`suggested-action`,
+// `destructive-action`, `flat`, `dim-label`, …). `gboolean` as `i32`.
+public extern fun gtk_widget_add_css_class(widget: GtkWidget, class: string);
+public extern fun gtk_widget_remove_css_class(widget: GtkWidget, class: string);
+public extern fun gtk_widget_has_css_class(widget: GtkWidget, class: string): i32;
 
 // Expanding: a widget given spare room along an axis (`gboolean` as `i32`).
 public extern fun gtk_widget_set_hexpand(widget: GtkWidget, expand: i32);

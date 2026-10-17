@@ -1,0 +1,52 @@
+// Pango attributes on a label and CSS classes on a widget, read back. Needs a
+// display.
+import std.env;
+import gtk {
+    Application,
+    gtk_label_get_attributes,
+    gtk_label_new,
+    gtk_label_set_attributes,
+    gtk_widget_add_css_class,
+    gtk_widget_has_css_class,
+    gtk_widget_remove_css_class,
+    pango_attr_list_insert,
+    pango_attr_list_new,
+    pango_attr_list_to_string,
+    pango_attr_list_unref,
+    pango_attr_size_new,
+    pango_attr_weight_new,
+    run,
+};
+
+@test
+fun label_attributes_and_css_classes_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.text", fun(a: Application) {
+        let label = gtk_label_new("x");
+        let list = pango_attr_list_new();
+        pango_attr_list_insert(list, pango_attr_weight_new(700));
+        pango_attr_list_insert(list, pango_attr_size_new(18 * 1024));
+        gtk_label_set_attributes(label, Some(list));
+        pango_attr_list_unref(list);
+        let set = match gtk_label_get_attributes(label) {
+            Some(l) => pango_attr_list_to_string(l),
+            None => "none",
+        };
+        gtk_label_set_attributes(label, None);
+        let cleared = if gtk_label_get_attributes(label).is_none() { "cleared" } else { "kept" };
+        gtk_widget_add_css_class(label, "dim-label");
+        let has = gtk_widget_has_css_class(label, "dim-label");
+        gtk_widget_remove_css_class(label, "dim-label");
+        let gone = gtk_widget_has_css_class(label, "dim-label");
+        seen.set([set, cleared, "{has} {gone}"]);
+        a.quit();
+    });
+    let got = seen.get();
+    assert(got[0].contains("weight bold"));
+    assert(got[0].contains("size 18432"));
+    assert_eq(got[1], "cleared");
+    assert_eq(got[2], "1 0");
+}
