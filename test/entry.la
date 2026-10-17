@@ -1,0 +1,42 @@
+// An entry's placeholder, and its "activate" signal (Enter), from code. Needs
+// a display.
+import std.env;
+import gtk {
+    Application,
+    connect_widget,
+    emit_widget,
+    gtk_entry_get_placeholder_text,
+    gtk_entry_new,
+    gtk_entry_set_placeholder_text,
+    GtkWidget,
+    run,
+};
+
+@test
+fun placeholders_set_and_clear_and_enter_activates() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.entry", fun(a: Application) {
+        let entry = gtk_entry_new();
+        gtk_entry_set_placeholder_text(entry, Some("Your name"));
+        let set = gtk_entry_get_placeholder_text(entry).unwrap_or("none");
+        gtk_entry_set_placeholder_text(entry, None);
+        let cleared = gtk_entry_get_placeholder_text(entry).unwrap_or("none");
+        let enters = Ref.new(0);
+        connect_widget(
+            entry,
+            "activate",
+            fun(e: GtkWidget) {
+                enters.update(fun(n) = n + 1);
+            },
+            0,
+        );
+        emit_widget(entry, "activate");
+        seen.set([set, cleared, "{enters.get()}"]);
+        a.quit();
+    });
+    // Cleared, GTK reads it back as an empty string, not NULL.
+    assert_eq(seen.get(), ["Your name", "", "1"]);
+}

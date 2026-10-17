@@ -78,6 +78,10 @@ public extern fun pango_attr_weight_new(weight: i32): PangoAttribute;
 public extern fun pango_attr_size_new(size: i32): PangoAttribute;
 
 public extern fun gtk_entry_new(): GtkWidget;
+/** Grey hint text shown while an entry is empty and unfocused; `None` removes it. */
+public extern fun gtk_entry_set_placeholder_text(entry: GtkWidget, text: Option<string>);
+/** The placeholder; after clearing it with `None`, GTK gives back an empty string. */
+public extern fun gtk_entry_get_placeholder_text(entry: GtkWidget): Option<string>;
 public extern fun gtk_editable_get_text(editable: GtkWidget): string;
 public extern fun gtk_editable_set_text(editable: GtkWidget, text: string);
 
