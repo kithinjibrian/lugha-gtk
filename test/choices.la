@@ -1,0 +1,91 @@
+// A drop-down over a string list, and a scale: values set, read back, and
+// their change signals. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GParamSpec,
+    GtkWidget,
+    connect_notify,
+    connect_widget,
+    gtk_drop_down_get_selected,
+    gtk_drop_down_new,
+    gtk_drop_down_set_model,
+    gtk_drop_down_set_selected,
+    gtk_range_get_value,
+    gtk_range_set_increments,
+    gtk_range_set_range,
+    gtk_range_set_round_digits,
+    gtk_range_set_value,
+    gtk_scale_new_with_range,
+    gtk_scale_set_digits,
+    gtk_scale_set_draw_value,
+    gtk_string_list_append,
+    gtk_string_list_new,
+    gtk_string_list_unref,
+    run,
+};
+
+@test
+fun drop_downs_and_scales_read_back_and_signal() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.choices", fun(a: Application) {
+        let list = gtk_string_list_new(None);
+        gtk_string_list_append(list, "Small");
+        gtk_string_list_append(list, "Large");
+        let dropdown = gtk_drop_down_new(Some(list), None);
+        connect_notify(
+            dropdown,
+            "notify::selected",
+            fun(d: GtkWidget, spec: Option<GParamSpec>) {
+                note("selected {gtk_drop_down_get_selected(d)}");
+            },
+            0,
+        );
+        gtk_drop_down_set_selected(dropdown, 1);
+        // A drop-down with items always has one picked: "none" is ignored.
+        gtk_drop_down_set_selected(dropdown, 4294967295);
+        note("after none {gtk_drop_down_get_selected(dropdown)}");
+        // A second list replaces the first; the drop-down keeps its own reference.
+        let other = gtk_string_list_new(None);
+        gtk_string_list_append(other, "Only");
+        gtk_drop_down_set_model(dropdown, Some(other));
+        gtk_string_list_unref(other);
+        note("after model {gtk_drop_down_get_selected(dropdown)}");
+        let scale = gtk_scale_new_with_range(0, 0.0, 100.0, 1.0);
+        gtk_scale_set_digits(scale, 0);
+        gtk_scale_set_draw_value(scale, 1);
+        gtk_range_set_round_digits(scale, 0);
+        gtk_range_set_increments(scale, 5.0, 10.0);
+        connect_widget(
+            scale,
+            "value-changed",
+            fun(r: GtkWidget) {
+                note("value {gtk_range_get_value(r) as i64}");
+            },
+            0,
+        );
+        gtk_range_set_value(scale, 42.0);
+        gtk_range_set_range(scale, 0.0, 30.0);
+        note("clamped {gtk_range_get_value(scale) as i64}");
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "selected 1",
+        "selected 4294967295",
+        "selected 0",
+        "after model 0",
+        "value 42",
+        "value 30",
+        "clamped 30",
+    ]);
+}

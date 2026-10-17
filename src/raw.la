@@ -31,6 +31,15 @@ public extern type GtkShortcutAction;
 /** A `GVariant *`: arguments GTK may hand a shortcut's callback. */
 public extern type GVariant;
 
+/** A `GtkStringList *`: a list of strings, the model a drop-down shows. */
+public extern type GtkStringList;
+
+/** A `GtkExpression *` (drop-downs take `None` for plain string lists). */
+public extern type GtkExpression;
+
+/** A `GParamSpec *`: which property a `notify::…` signal is about. */
+public extern type GParamSpec;
+
 /** A `GtkApplication *`. */
 public extern type GtkApplication;
 
@@ -348,3 +357,50 @@ public extern fun gtk_widget_is_ancestor(widget: GtkWidget, ancestor: GtkWidget)
 
 /** The widget with keyboard focus in `window`, if any; a text field's focus sits on a widget inside it. */
 public extern fun gtk_root_get_focus(window: GtkWidget): Option<GtkWidget>;
+
+// Drop-downs over a string list, and scales (sliders).
+
+/** A new, empty string list (`None`: no initial strings). */
+public extern fun gtk_string_list_new(strings: Option<Argv>): GtkStringList;
+public extern fun gtk_string_list_append(list: GtkStringList, text: string);
+/** Drops a reference to a string list you made and no longer keep. */
+public extern "g_object_unref" fun gtk_string_list_unref(list: GtkStringList);
+/** A drop-down showing `model`, which it takes ownership of; `expression` `None` for string lists. */
+public extern fun gtk_drop_down_new(
+    model: Option<GtkStringList>,
+    expression: Option<GtkExpression>,
+): GtkWidget;
+/** Shows `model` instead (the drop-down takes its own reference). */
+public extern fun gtk_drop_down_set_model(dropdown: GtkWidget, model: Option<GtkStringList>);
+/** Picks item `position`. A drop-down with items always has one picked: 0xffffffff (none) is ignored. */
+public extern fun gtk_drop_down_set_selected(dropdown: GtkWidget, position: u32);
+public extern fun gtk_drop_down_get_selected(dropdown: GtkWidget): u32;
+
+/** Connects a handler for a `notify::property` signal, which takes the object and the property's spec. */
+public extern "g_signal_connect_data" fun connect_notify(
+    instance: GtkWidget,
+    signal: string,
+    handler: fun(GtkWidget, Option<GParamSpec>, data),
+    user: data,
+    destroy: release,
+    flags: i32,
+): u64;
+
+/** A scale from `min` to `max` moving in `step`s; `orientation` 0 horizontal, 1 vertical. */
+public extern fun gtk_scale_new_with_range(
+    orientation: i32,
+    min: f64,
+    max: f64,
+    step: f64,
+): GtkWidget;
+/** Decimals shown for the drawn value. */
+public extern fun gtk_scale_set_digits(scale: GtkWidget, digits: i32);
+/** Whether the current value is drawn beside the handle (`gboolean` as `i32`). */
+public extern fun gtk_scale_set_draw_value(scale: GtkWidget, draw: i32);
+public extern fun gtk_range_set_value(range: GtkWidget, value: f64);
+public extern fun gtk_range_get_value(range: GtkWidget): f64;
+public extern fun gtk_range_set_range(range: GtkWidget, min: f64, max: f64);
+/** The step for arrow keys and the page for Page Up/Down. */
+public extern fun gtk_range_set_increments(range: GtkWidget, step: f64, page: f64);
+/** Rounds values to this many decimals as the user moves the handle (0: whole numbers). */
+public extern fun gtk_range_set_round_digits(range: GtkWidget, digits: i32);
