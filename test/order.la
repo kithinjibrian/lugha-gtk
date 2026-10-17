@@ -1,0 +1,42 @@
+// Inserting and reordering a box's children, read back in the order GTK
+// shows them. Needs a display.
+import std.env;
+import gtk { Application, run };
+import gtk.raw;
+
+// The labels of `box`'s children, first to last.
+fun labels(box: raw.GtkWidget): string[] {
+    let mut out: string[] = [];
+    let mut here = raw.gtk_widget_get_first_child(box);
+    while here.is_some() {
+        let w = here.unwrap();
+        out.push(raw.gtk_label_get_text(w));
+        here = raw.gtk_widget_get_next_sibling(w);
+    }
+    out
+}
+
+@test
+fun children_insert_and_reorder_in_place() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[][]> = Ref.new([]);
+    run("org.lugha.test.order", fun(a: Application) {
+        let box = raw.gtk_box_new(1, 0);
+        let x = raw.gtk_label_new("a");
+        let y = raw.gtk_label_new("b");
+        let z = raw.gtk_label_new("c");
+        raw.gtk_box_append(box, x);
+        raw.gtk_box_append(box, y);
+        raw.gtk_box_append(box, z);
+        let first = labels(box);
+        raw.gtk_box_reorder_child_after(box, z, None);
+        let to_front = labels(box);
+        raw.gtk_box_reorder_child_after(box, z, Some(y));
+        let to_end = labels(box);
+        seen.set([first, to_front, to_end]);
+        a.quit();
+    });
+    assert_eq(seen.get(), [["a", "b", "c"], ["c", "a", "b"], ["a", "b", "c"]]);
+}
