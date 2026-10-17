@@ -60,6 +60,23 @@ public extern fun gtk_widget_set_margin_end(widget: GtkWidget, margin: i32);
 public extern fun gtk_widget_set_margin_top(widget: GtkWidget, margin: i32);
 public extern fun gtk_widget_set_margin_bottom(widget: GtkWidget, margin: i32);
 
+// Expanding: a widget given spare room along an axis (`gboolean` as `i32`).
+public extern fun gtk_widget_set_hexpand(widget: GtkWidget, expand: i32);
+public extern fun gtk_widget_get_hexpand(widget: GtkWidget): i32;
+public extern fun gtk_widget_set_vexpand(widget: GtkWidget, expand: i32);
+public extern fun gtk_widget_get_vexpand(widget: GtkWidget): i32;
+
+/** `GtkOrientation` of a box, separator or other orientable: 0 horizontal, 1 vertical. */
+public extern fun gtk_orientable_get_orientation(orientable: GtkWidget): i32;
+
+/** A line between widgets; `orientation` as for `gtk_box_new`. */
+public extern fun gtk_separator_new(orientation: i32): GtkWidget;
+
+// GtkScrolledWindow: one child, scrolled when it's bigger than the window.
+public extern fun gtk_scrolled_window_new(): GtkWidget;
+public extern fun gtk_scrolled_window_set_child(scrolled: GtkWidget, child: Option<GtkWidget>);
+public extern fun gtk_scrolled_window_get_child(scrolled: GtkWidget): Option<GtkWidget>;
+
 // `g_signal_connect_data` once per handler shape: GTK calls every signal
 // handler with its object first and the user data last.
 

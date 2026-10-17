@@ -1,0 +1,45 @@
+// Expanding, separators and scrolled windows: built from code and read back.
+// Needs a display.
+import std.env;
+import gtk { Application, run };
+import gtk.raw;
+
+@test
+fun expanding_separators_and_scrolling_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<i32[]> = Ref.new([]);
+    run("org.lugha.test.layout", fun(a: Application) {
+        let filler = raw.gtk_box_new(0, 0);
+        raw.gtk_widget_set_vexpand(filler, 1);
+        let line = raw.gtk_separator_new(1);
+        let scrolled = raw.gtk_scrolled_window_new();
+        let label = raw.gtk_label_new("inside");
+        let empty: i32 = if raw.gtk_scrolled_window_get_child(scrolled).is_none() {
+            1
+        } else {
+            0
+        };
+        raw.gtk_scrolled_window_set_child(scrolled, Some(label));
+        // A label can't scroll itself, so GTK wraps it in a GtkViewport: the
+        // scrolled window's child is that viewport, not the label.
+        let wrapped: i32 = match raw.gtk_scrolled_window_get_child(scrolled) {
+            Some(w) => if w == label {
+                0
+            } else {
+                1
+            },
+            None => 0,
+        };
+        seen.set([
+            raw.gtk_widget_get_vexpand(filler),
+            raw.gtk_widget_get_hexpand(filler),
+            raw.gtk_orientable_get_orientation(line),
+            empty,
+            wrapped,
+        ]);
+        a.quit();
+    });
+    assert_eq(seen.get(), [1, 0, 1, 1, 1]);
+}
