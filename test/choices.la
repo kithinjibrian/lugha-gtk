@@ -81,7 +81,7 @@ fun drop_downs_and_scales_read_back_and_signal() {
     });
     assert_eq(seen.get(), [
         "selected 1",
-        "selected 4294967295",
+        "after none 1",
         "selected 0",
         "after model 0",
         "value 42",
