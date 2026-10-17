@@ -23,7 +23,9 @@ import gtk {
     gtk_style_context_add_provider_for_display,
     gtk_widget_add_css_class,
     gtk_widget_get_display,
+    gtk_widget_get_overflow,
     gtk_widget_has_css_class,
+    gtk_widget_set_overflow,
     gtk_window_get_titlebar,
     gtk_window_maximize,
     gtk_window_set_child,
@@ -83,6 +85,11 @@ fun styles_header_bars_and_maximizing() {
             "title is ours: {gtk_header_bar_get_title_widget(bar) == Some(title)} buttons {gtk_header_bar_get_show_title_buttons(bar)}",
         );
         gtk_header_bar_remove(bar, menu);
+        note("overflow {gtk_widget_get_overflow(box)}");
+        gtk_widget_set_overflow(box, 1);
+        note("overflow {gtk_widget_get_overflow(box)}");
+        gtk_widget_set_overflow(box, 0);
+        note("overflow {gtk_widget_get_overflow(box)}");
         gtk_window_maximize(window);
         note("done");
         a.quit();
@@ -93,6 +100,9 @@ fun styles_header_bars_and_maximizing() {
         "classes left: lg-red 0 lg-other 0 kept 1",
         "titlebar is ours: true",
         "title is ours: true buttons 1",
+        "overflow 0",
+        "overflow 1",
+        "overflow 0",
         "done",
     ]);
 }

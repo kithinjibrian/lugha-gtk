@@ -182,6 +182,13 @@ public extern fun gtk_widget_remove_css_class(widget: GtkWidget, class: string);
 public extern fun gtk_widget_has_css_class(widget: GtkWidget, class: string): i32;
 /** Shows or hides the widget (`gboolean` as `i32`); a hidden widget takes no room. */
 public extern fun gtk_widget_set_visible(widget: GtkWidget, visible: i32);
+/**
+ * How content outside the widget's area is treated (`GtkOverflow`): 0
+ * visible (the default), 1 hidden, clipped to the widget's shape, its
+ * rounded corners included.
+ */
+public extern fun gtk_widget_set_overflow(widget: GtkWidget, overflow: i32);
+public extern fun gtk_widget_get_overflow(widget: GtkWidget): i32;
 public extern fun gtk_widget_get_visible(widget: GtkWidget): i32;
 
 /** Whether a widget responds to the user; an insensitive one is greyed out. `gboolean` as `i32`. */
