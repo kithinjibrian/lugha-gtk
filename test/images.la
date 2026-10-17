@@ -1,0 +1,80 @@
+// Theme icons, pictures from files, a button showing a child of its own, and
+// visibility, each set and read back. Needs a display; no image file (a missing
+// file is allowed and shows nothing).
+import std.env;
+import gtk {
+    Application,
+    g_file_get_path,
+    g_free,
+    gtk_box_new,
+    gtk_button_get_child,
+    gtk_button_new_with_label,
+    gtk_button_set_child,
+    gtk_image_get_icon_name,
+    gtk_image_get_pixel_size,
+    gtk_image_new_from_icon_name,
+    gtk_image_set_from_icon_name,
+    gtk_image_set_pixel_size,
+    gtk_picture_get_content_fit,
+    gtk_picture_get_file,
+    gtk_picture_new_for_filename,
+    gtk_picture_set_content_fit,
+    gtk_picture_set_filename,
+    gtk_widget_get_visible,
+    gtk_widget_set_visible,
+    lgtk_cstring_text,
+    run,
+};
+
+@test
+fun icons_pictures_button_children_and_visibility_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.images", fun(a: Application) {
+        let image = gtk_image_new_from_icon_name("list-add-symbolic");
+        note("icon {gtk_image_get_icon_name(image)} {gtk_image_get_pixel_size(image)}");
+        gtk_image_set_from_icon_name(image, "user-trash-symbolic");
+        gtk_image_set_pixel_size(image, 48);
+        note("icon {gtk_image_get_icon_name(image)} {gtk_image_get_pixel_size(image)}");
+        let picture = gtk_picture_new_for_filename("/nowhere/a.png");
+        note("fit {gtk_picture_get_content_fit(picture)}");
+        gtk_picture_set_filename(picture, "/nowhere/b.png");
+        gtk_picture_set_content_fit(picture, 2);
+        let path = match gtk_picture_get_file(picture) {
+            Some(file) => match g_file_get_path(file) {
+                Some(owned) => {
+                    let text = lgtk_cstring_text(owned);
+                    g_free(owned);
+                    text
+                }
+                None => "no path",
+            },
+            None => "no file",
+        };
+        note("picture {path} fit {gtk_picture_get_content_fit(picture)}");
+        let button = gtk_button_new_with_label("Add");
+        let content = gtk_box_new(0, 4);
+        gtk_button_set_child(button, Some(content));
+        note("child is ours: {gtk_button_get_child(button) == Some(content)}");
+        gtk_widget_set_visible(image, 0);
+        note("visible {gtk_widget_get_visible(image)}");
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "icon Some(\"list-add-symbolic\") -1",
+        "icon Some(\"user-trash-symbolic\") 48",
+        "fit 1",
+        "picture /nowhere/b.png fit 2",
+        "child is ours: true",
+        "visible 0",
+    ]);
+}

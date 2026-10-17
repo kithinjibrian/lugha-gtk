@@ -46,6 +46,9 @@ public extern type GtkApplication;
 /** Any `GtkWidget *`: windows, boxes, buttons, labels, entries. GTK's casts between them are the same pointer. */
 public extern type GtkWidget;
 
+/** A `GFile *`: a file's location, such as the one a picture shows. */
+public extern type GFile;
+
 /** A `char **` argument vector; `None` passes `NULL`. */
 public extern type Argv;
 
@@ -88,6 +91,9 @@ public extern fun gtk_box_reorder_child_after(
 public extern fun gtk_button_new_with_label(label: string): GtkWidget;
 public extern fun gtk_button_set_label(button: GtkWidget, label: string);
 public extern fun gtk_button_get_label(button: GtkWidget): Option<string>;
+/** Shows `child` as the button's content instead of a label or icon; `None` removes it. */
+public extern fun gtk_button_set_child(button: GtkWidget, child: Option<GtkWidget>);
+public extern fun gtk_button_get_child(button: GtkWidget): Option<GtkWidget>;
 
 public extern fun gtk_label_new(text: string): GtkWidget;
 public extern fun gtk_label_set_text(label: GtkWidget, text: string);
@@ -168,6 +174,9 @@ public extern fun gtk_widget_set_size_request(widget: GtkWidget, width: i32, hei
 public extern fun gtk_widget_add_css_class(widget: GtkWidget, class: string);
 public extern fun gtk_widget_remove_css_class(widget: GtkWidget, class: string);
 public extern fun gtk_widget_has_css_class(widget: GtkWidget, class: string): i32;
+/** Shows or hides the widget (`gboolean` as `i32`); a hidden widget takes no room. */
+public extern fun gtk_widget_set_visible(widget: GtkWidget, visible: i32);
+public extern fun gtk_widget_get_visible(widget: GtkWidget): i32;
 
 /** Whether a widget responds to the user; an insensitive one is greyed out. `gboolean` as `i32`. */
 public extern fun gtk_widget_set_sensitive(widget: GtkWidget, sensitive: i32);
@@ -414,3 +423,24 @@ public extern fun gtk_range_set_range(range: GtkWidget, min: f64, max: f64);
 public extern fun gtk_range_set_increments(range: GtkWidget, step: f64, page: f64);
 /** Rounds values to this many decimals as the user moves the handle (0: whole numbers). */
 public extern fun gtk_range_set_round_digits(range: GtkWidget, digits: i32);
+
+// Icons from the theme (GtkImage) and pictures from files (GtkPicture).
+
+/** A theme icon by name (`"user-trash-symbolic"`); an unknown name shows GTK's "missing image" icon. */
+public extern fun gtk_image_new_from_icon_name(icon_name: string): GtkWidget;
+public extern fun gtk_image_set_from_icon_name(image: GtkWidget, icon_name: string);
+/** The icon's name (GTK's string, copied); `None` when it shows something else. */
+public extern fun gtk_image_get_icon_name(image: GtkWidget): Option<string>;
+/** The icon's size in pixels; -1 goes back to the theme's size. */
+public extern fun gtk_image_set_pixel_size(image: GtkWidget, pixel_size: i32);
+public extern fun gtk_image_get_pixel_size(image: GtkWidget): i32;
+/** A picture of the file at `filename`; a missing or unreadable file shows nothing, without an error. */
+public extern fun gtk_picture_new_for_filename(filename: string): GtkWidget;
+public extern fun gtk_picture_set_filename(picture: GtkWidget, filename: string);
+/** How the picture fills its room (`GtkContentFit`): 0 fill, 1 contain, 2 cover, 3 scale down. */
+public extern fun gtk_picture_set_content_fit(picture: GtkWidget, content_fit: i32);
+public extern fun gtk_picture_get_content_fit(picture: GtkWidget): i32;
+/** The file the picture shows (GTK keeps it: don't free); `None` when it shows none. */
+public extern fun gtk_picture_get_file(picture: GtkWidget): Option<GFile>;
+/** The file's local path, allocated: read with `lgtk_cstring_text`, then `g_free` it; `None` when it has none. */
+public extern fun g_file_get_path(file: GFile): Option<OwnedText>;
