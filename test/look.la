@@ -1,0 +1,98 @@
+// An app-wide stylesheet and CSS classes, a header bar as a window's
+// titlebar, and maximizing. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    g_free,
+    gtk_application_window_new,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_button_new_with_label,
+    gtk_css_provider_load_from_string,
+    gtk_css_provider_new,
+    gtk_css_provider_to_string,
+    gtk_header_bar_get_show_title_buttons,
+    gtk_header_bar_get_title_widget,
+    gtk_header_bar_new,
+    gtk_header_bar_pack_end,
+    gtk_header_bar_pack_start,
+    gtk_header_bar_remove,
+    gtk_header_bar_set_show_title_buttons,
+    gtk_header_bar_set_title_widget,
+    gtk_label_new,
+    gtk_style_context_add_provider_for_display,
+    gtk_widget_add_css_class,
+    gtk_widget_get_display,
+    gtk_widget_has_css_class,
+    gtk_window_get_titlebar,
+    gtk_window_maximize,
+    gtk_window_set_child,
+    gtk_window_set_titlebar,
+    lgtk_cstring_text,
+    lgtk_remove_css_classes_with_prefix,
+    lgtk_widget_rgba,
+    run,
+};
+
+@test
+fun styles_header_bars_and_maximizing() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.look", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let box = gtk_box_new(1, 0);
+        let label = gtk_label_new("text");
+        gtk_box_append(box, label);
+        gtk_window_set_child(window, box);
+        // A stylesheet for the display, and a class that picks one of its rules.
+        let provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_string(provider, ".lg-red {{ color: #ff0000; }}");
+        let text = gtk_css_provider_to_string(provider);
+        note("css has the rule: {lgtk_cstring_text(text).contains("lg-red")}");
+        g_free(text);
+        gtk_style_context_add_provider_for_display(gtk_widget_get_display(window), provider, 600);
+        gtk_widget_add_css_class(label, "lg-red");
+        gtk_widget_add_css_class(label, "lg-other");
+        gtk_widget_add_css_class(label, "kept");
+        note("red: {lgtk_widget_rgba(label) == 4278190335}");
+        lgtk_remove_css_classes_with_prefix(label, "lg-");
+        note(
+            "classes left: lg-red {gtk_widget_has_css_class(label, "lg-red")} lg-other {gtk_widget_has_css_class(label, "lg-other")} kept {gtk_widget_has_css_class(label, "kept")}",
+        );
+        // A header bar as the titlebar.
+        let bar = gtk_header_bar_new();
+        let back = gtk_button_new_with_label("Back");
+        let menu = gtk_button_new_with_label("Menu");
+        let title = gtk_label_new("Title");
+        gtk_header_bar_pack_start(bar, back);
+        gtk_header_bar_pack_end(bar, menu);
+        gtk_header_bar_set_title_widget(bar, Some(title));
+        gtk_header_bar_set_show_title_buttons(bar, 1);
+        gtk_window_set_titlebar(window, Some(bar));
+        note("titlebar is ours: {gtk_window_get_titlebar(window) == Some(bar)}");
+        note(
+            "title is ours: {gtk_header_bar_get_title_widget(bar) == Some(title)} buttons {gtk_header_bar_get_show_title_buttons(bar)}",
+        );
+        gtk_header_bar_remove(bar, menu);
+        gtk_window_maximize(window);
+        note("done");
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "css has the rule: true",
+        "red: true",
+        "classes left: lg-red 0 lg-other 0 kept 1",
+        "titlebar is ours: true",
+        "title is ours: true buttons 1",
+        "done",
+    ]);
+}

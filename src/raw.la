@@ -46,6 +46,12 @@ public extern type GtkApplication;
 /** Any `GtkWidget *`: windows, boxes, buttons, labels, entries. GTK's casts between them are the same pointer. */
 public extern type GtkWidget;
 
+/** A `GtkCssProvider *`: a stylesheet GTK applies. */
+public extern type GtkCssProvider;
+
+/** A `GdkDisplay *`: the screen a window is on; app-wide styles are added per display. */
+public extern type GdkDisplay;
+
 /** A `GFile *`: a file's location, such as the one a picture shows. */
 public extern type GFile;
 
@@ -444,3 +450,40 @@ public extern fun gtk_picture_get_content_fit(picture: GtkWidget): i32;
 public extern fun gtk_picture_get_file(picture: GtkWidget): Option<GFile>;
 /** The file's local path, allocated: read with `lgtk_cstring_text`, then `g_free` it; `None` when it has none. */
 public extern fun g_file_get_path(file: GFile): Option<OwnedText>;
+
+// App-wide styles, maximized windows and header bars.
+
+public extern fun gtk_css_provider_new(): GtkCssProvider;
+/** Replaces the provider's rules with the CSS in `css` (GTK 4.12; `load_from_data` is deprecated). */
+public extern fun gtk_css_provider_load_from_string(provider: GtkCssProvider, css: string);
+/** The provider's rules as CSS, allocated: read with `lgtk_cstring_text`, then `g_free` it. */
+public extern fun gtk_css_provider_to_string(provider: GtkCssProvider): OwnedText;
+/** Applies the provider to every widget on `display`; `priority` 600 is GTK_STYLE_PROVIDER_PRIORITY_APPLICATION. */
+public extern fun gtk_style_context_add_provider_for_display(
+    display: GdkDisplay,
+    provider: GtkCssProvider,
+    priority: u32,
+);
+public extern fun gtk_widget_get_display(widget: GtkWidget): GdkDisplay;
+/** Removes the widget's CSS classes that start with `prefix` (src/c/look.c). */
+public extern fun lgtk_remove_css_classes_with_prefix(widget: GtkWidget, prefix: string);
+/** The widget's text colour as 0xRRGGBBAA (src/c/look.c; for tests). */
+public extern fun lgtk_widget_rgba(widget: GtkWidget): u32;
+/** Maximizes the window; before it's shown, it opens maximized. */
+public extern fun gtk_window_maximize(window: GtkWidget);
+public extern fun gtk_window_is_maximized(window: GtkWidget): i32;
+/** Shows `titlebar` (a header bar) as the window's title bar; `None` goes back to the default. */
+public extern fun gtk_window_set_titlebar(window: GtkWidget, titlebar: Option<GtkWidget>);
+public extern fun gtk_window_get_titlebar(window: GtkWidget): Option<GtkWidget>;
+public extern fun gtk_header_bar_new(): GtkWidget;
+/** The widget in the middle of the bar; `None` shows the window's title. */
+public extern fun gtk_header_bar_set_title_widget(bar: GtkWidget, title: Option<GtkWidget>);
+public extern fun gtk_header_bar_get_title_widget(bar: GtkWidget): Option<GtkWidget>;
+/** Adds `child` at the start, after those already packed there. */
+public extern fun gtk_header_bar_pack_start(bar: GtkWidget, child: GtkWidget);
+/** Adds `child` at the end, before (further in than) those already packed there. */
+public extern fun gtk_header_bar_pack_end(bar: GtkWidget, child: GtkWidget);
+public extern fun gtk_header_bar_remove(bar: GtkWidget, child: GtkWidget);
+/** Whether GTK shows the window's controls (close, minimize …) in the bar (`gboolean` as `i32`). */
+public extern fun gtk_header_bar_set_show_title_buttons(bar: GtkWidget, setting: i32);
+public extern fun gtk_header_bar_get_show_title_buttons(bar: GtkWidget): i32;
