@@ -1,0 +1,46 @@
+// A widget reference outlives the widget's removal from its parent, and the
+// last unref finalizes it. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GtkWidget,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_box_remove,
+    gtk_label_new,
+    gtk_widget_ref,
+    gtk_widget_unref,
+    on_finalized,
+    run,
+};
+
+@test
+fun a_held_widget_lives_until_its_last_unref() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.refs", fun(a: Application) {
+        let box = gtk_box_new(1, 0);
+        let label = gtk_label_new("held");
+        gtk_box_append(box, label);
+        on_finalized(label, fun(gone: GtkWidget) {
+            note("finalized");
+        });
+        let held = gtk_widget_ref(label);
+        note("same widget: {held == label}");
+        gtk_box_remove(box, label);
+        note("removed");
+        gtk_widget_unref(held);
+        note("unreffed");
+        a.quit();
+    });
+    assert_eq(seen.get(), ["same widget: true", "removed", "finalized", "unreffed"]);
+}

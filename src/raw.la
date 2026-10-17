@@ -176,6 +176,10 @@ public extern fun gtk_widget_set_sensitive(widget: GtkWidget, sensitive: i32);
 public extern fun gtk_widget_set_tooltip_text(widget: GtkWidget, text: Option<string>);
 public extern fun gtk_widget_get_tooltip_text(widget: GtkWidget): Option<string>;
 public extern fun gtk_widget_get_sensitive(widget: GtkWidget): i32;
+/** Keeps `widget` alive until a matching `gtk_widget_unref`, even after its parent drops it; returns it. */
+public extern "g_object_ref" fun gtk_widget_ref(widget: GtkWidget): GtkWidget;
+/** Drops a reference taken with `gtk_widget_ref`. */
+public extern "g_object_unref" fun gtk_widget_unref(widget: GtkWidget);
 
 // Expanding: a widget given spare room along an axis (`gboolean` as `i32`).
 public extern fun gtk_widget_set_hexpand(widget: GtkWidget, expand: i32);
