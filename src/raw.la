@@ -68,6 +68,23 @@ public extern fun gtk_button_get_label(button: GtkWidget): Option<string>;
 public extern fun gtk_label_new(text: string): GtkWidget;
 public extern fun gtk_label_set_text(label: GtkWidget, text: string);
 public extern fun gtk_label_get_text(label: GtkWidget): string;
+
+// Long text in a label. `gboolean` as `i32`; PangoWrapMode: 0 word, 1 char,
+// 2 word else char; PangoEllipsizeMode: 0 none, 1 start, 2 middle, 3 end.
+public extern fun gtk_label_set_wrap(label: GtkWidget, wrap: i32);
+public extern fun gtk_label_get_wrap(label: GtkWidget): i32;
+public extern fun gtk_label_set_wrap_mode(label: GtkWidget, mode: i32);
+public extern fun gtk_label_get_wrap_mode(label: GtkWidget): i32;
+public extern fun gtk_label_set_ellipsize(label: GtkWidget, mode: i32);
+public extern fun gtk_label_get_ellipsize(label: GtkWidget): i32;
+/** With wrapping and ellipsizing both on, the most lines shown; -1 for no limit. */
+public extern fun gtk_label_set_lines(label: GtkWidget, lines: i32);
+public extern fun gtk_label_get_lines(label: GtkWidget): i32;
+/** The most characters of width the label asks for; -1 for no cap. */
+public extern fun gtk_label_set_max_width_chars(label: GtkWidget, chars: i32);
+public extern fun gtk_label_get_max_width_chars(label: GtkWidget): i32;
+public extern fun gtk_label_set_selectable(label: GtkWidget, selectable: i32);
+public extern fun gtk_label_get_selectable(label: GtkWidget): i32;
 /** Sets (or, with `None`, clears) a label's text attributes; the label keeps its own reference. */
 public extern fun gtk_label_set_attributes(label: GtkWidget, attrs: Option<PangoAttrList>);
 public extern fun gtk_label_get_attributes(label: GtkWidget): Option<PangoAttrList>;
@@ -97,6 +114,10 @@ public extern fun gtk_editable_set_position(editable: GtkWidget, position: i32);
 
 // GtkCheckButton. Its booleans are C `gboolean`s (`int`): 0 is false.
 public extern fun gtk_check_button_new_with_label(label: string): GtkWidget;
+public extern fun gtk_check_button_new(): GtkWidget;
+/** Shows `child` (such as a label of your own) beside the box instead of a plain label. */
+public extern fun gtk_check_button_set_child(check: GtkWidget, child: Option<GtkWidget>);
+public extern fun gtk_check_button_get_child(check: GtkWidget): Option<GtkWidget>;
 public extern fun gtk_check_button_get_active(check: GtkWidget): i32;
 public extern fun gtk_check_button_set_active(check: GtkWidget, active: i32);
 public extern fun gtk_check_button_get_label(check: GtkWidget): Option<string>;
@@ -126,6 +147,10 @@ public extern fun gtk_widget_has_css_class(widget: GtkWidget, class: string): i3
 
 /** Whether a widget responds to the user; an insensitive one is greyed out. `gboolean` as `i32`. */
 public extern fun gtk_widget_set_sensitive(widget: GtkWidget, sensitive: i32);
+
+/** Hover text; `None` removes it. */
+public extern fun gtk_widget_set_tooltip_text(widget: GtkWidget, text: Option<string>);
+public extern fun gtk_widget_get_tooltip_text(widget: GtkWidget): Option<string>;
 public extern fun gtk_widget_get_sensitive(widget: GtkWidget): i32;
 
 // Expanding: a widget given spare room along an axis (`gboolean` as `i32`).

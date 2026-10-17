@@ -1,0 +1,69 @@
+// Long-text settings on a label, tooltips, and a check button showing a label
+// of its own, each set and read back. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_check_button_get_child,
+    gtk_check_button_new,
+    gtk_check_button_set_child,
+    gtk_label_get_ellipsize,
+    gtk_label_get_lines,
+    gtk_label_get_max_width_chars,
+    gtk_label_get_selectable,
+    gtk_label_get_text,
+    gtk_label_get_wrap,
+    gtk_label_get_wrap_mode,
+    gtk_label_new,
+    gtk_label_set_ellipsize,
+    gtk_label_set_lines,
+    gtk_label_set_max_width_chars,
+    gtk_label_set_selectable,
+    gtk_label_set_wrap,
+    gtk_label_set_wrap_mode,
+    gtk_widget_get_tooltip_text,
+    gtk_widget_set_tooltip_text,
+    run,
+};
+
+@test
+fun label_settings_tooltips_and_check_button_children_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.label", fun(a: Application) {
+        let label = gtk_label_new("a long line");
+        gtk_label_set_wrap(label, 1);
+        gtk_label_set_wrap_mode(label, 2);
+        gtk_label_set_ellipsize(label, 3);
+        gtk_label_set_lines(label, 3);
+        gtk_label_set_max_width_chars(label, 40);
+        gtk_label_set_selectable(label, 1);
+        gtk_widget_set_tooltip_text(label, Some("hover"));
+        let tip = gtk_widget_get_tooltip_text(label).unwrap_or("none");
+        gtk_widget_set_tooltip_text(label, None);
+        let cleared = gtk_widget_get_tooltip_text(label).unwrap_or("none");
+        let check = gtk_check_button_new();
+        let own = gtk_label_new("mine");
+        gtk_check_button_set_child(check, Some(own));
+        let child = match gtk_check_button_get_child(check) {
+            Some(w) => gtk_label_get_text(w),
+            None => "none",
+        };
+        seen.set([
+            "wrap {gtk_label_get_wrap(label)} mode {gtk_label_get_wrap_mode(label)}",
+            "ellipsize {gtk_label_get_ellipsize(label)} lines {gtk_label_get_lines(label)}",
+            "max {gtk_label_get_max_width_chars(label)} selectable {gtk_label_get_selectable(label)}",
+            "tooltip {tip}, then {cleared}",
+            "child {child}",
+        ]);
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "wrap 1 mode 2",
+        "ellipsize 3 lines 3",
+        "max 40 selectable 1",
+        "tooltip hover, then none",
+        "child mine",
+    ]);
+}
