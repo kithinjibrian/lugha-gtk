@@ -7,6 +7,7 @@ import gtk {
     GtkWidget,
     connect_notify,
     connect_widget,
+    gtk_drop_down_get_model,
     gtk_drop_down_get_selected,
     gtk_drop_down_new,
     gtk_drop_down_set_model,
@@ -20,6 +21,8 @@ import gtk {
     gtk_scale_set_digits,
     gtk_scale_set_draw_value,
     gtk_string_list_append,
+    gtk_string_list_get_n_items,
+    gtk_string_list_get_string,
     gtk_string_list_new,
     gtk_string_list_unref,
     run,
@@ -61,6 +64,12 @@ fun drop_downs_and_scales_read_back_and_signal() {
         gtk_drop_down_set_model(dropdown, Some(other));
         gtk_string_list_unref(other);
         note("after model {gtk_drop_down_get_selected(dropdown)}");
+        match gtk_drop_down_get_model(dropdown) {
+            Some(shown) => note(
+                "model {gtk_string_list_get_n_items(shown)} {gtk_string_list_get_string(shown, 0)} {gtk_string_list_get_string(shown, 1)}",
+            ),
+            None => note("no model"),
+        }
         let scale = gtk_scale_new_with_range(0, 0.0, 100.0, 1.0);
         gtk_scale_set_digits(scale, 0);
         gtk_scale_set_draw_value(scale, 1);
@@ -84,6 +93,7 @@ fun drop_downs_and_scales_read_back_and_signal() {
         "after none 1",
         "selected 0",
         "after model 0",
+        "model 1 Some(\"Only\") None",
         "value 42",
         "value 30",
         "clamped 30",

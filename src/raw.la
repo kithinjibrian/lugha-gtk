@@ -375,6 +375,12 @@ public extern fun gtk_drop_down_set_model(dropdown: GtkWidget, model: Option<Gtk
 /** Picks item `position`. A drop-down with items always has one picked: 0xffffffff (none) is ignored. */
 public extern fun gtk_drop_down_set_selected(dropdown: GtkWidget, position: u32);
 public extern fun gtk_drop_down_get_selected(dropdown: GtkWidget): u32;
+/** The list a drop-down shows (GTK's `GListModel *`: here, the string list it was given), `None` when it has none. */
+public extern fun gtk_drop_down_get_model(dropdown: GtkWidget): Option<GtkStringList>;
+/** How many strings the list holds (`g_list_model_get_n_items`). */
+public extern "g_list_model_get_n_items" fun gtk_string_list_get_n_items(list: GtkStringList): u32;
+/** The string at `position`, copied; `None` past the end. */
+public extern fun gtk_string_list_get_string(list: GtkStringList, position: u32): Option<string>;
 
 /** Connects a handler for a `notify::property` signal, which takes the object and the property's spec. */
 public extern "g_signal_connect_data" fun connect_notify(
