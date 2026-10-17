@@ -48,6 +48,13 @@ public extern fun gtk_entry_new(): GtkWidget;
 public extern fun gtk_editable_get_text(editable: GtkWidget): string;
 public extern fun gtk_editable_set_text(editable: GtkWidget, text: string);
 
+// GtkCheckButton. Its booleans are C `gboolean`s (`int`): 0 is false.
+public extern fun gtk_check_button_new_with_label(label: string): GtkWidget;
+public extern fun gtk_check_button_get_active(check: GtkWidget): i32;
+public extern fun gtk_check_button_set_active(check: GtkWidget, active: i32);
+public extern fun gtk_check_button_get_label(check: GtkWidget): Option<string>;
+public extern fun gtk_check_button_set_label(check: GtkWidget, label: string);
+
 public extern fun gtk_widget_set_margin_start(widget: GtkWidget, margin: i32);
 public extern fun gtk_widget_set_margin_end(widget: GtkWidget, margin: i32);
 public extern fun gtk_widget_set_margin_top(widget: GtkWidget, margin: i32);

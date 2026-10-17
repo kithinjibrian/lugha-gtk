@@ -1,0 +1,38 @@
+// A check button: setting it from code fires `toggled`, as a user's click
+// would, and its state and label read back. Needs a display.
+import std.env;
+import gtk { Application, run };
+import gtk.raw;
+
+@test
+fun a_check_button_toggles_and_reads_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<i32[]> = Ref.new([]);
+    let label = Ref.new("");
+    run("org.lugha.test.check", fun(a: Application) {
+        let check = raw.gtk_check_button_new_with_label("Done");
+        raw.connect_widget(
+            check,
+            "toggled",
+            fun(c: raw.GtkWidget) {
+                seen.update(fun(xs) {
+                    let mut ys = xs;
+                    ys.push(raw.gtk_check_button_get_active(c));
+                    ys
+                });
+            },
+            0,
+        );
+        raw.gtk_check_button_set_active(check, 1);
+        raw.gtk_check_button_set_active(check, 1);
+        raw.gtk_check_button_set_active(check, 0);
+        raw.gtk_check_button_set_label(check, "Finished");
+        label.set(raw.gtk_check_button_get_label(check).unwrap_or("?"));
+        a.quit();
+    });
+    // Setting the state it already has fires nothing.
+    assert_eq(seen.get(), [1, 0]);
+    assert_eq(label.get(), "Finished");
+}
