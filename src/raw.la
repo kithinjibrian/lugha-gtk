@@ -22,6 +22,9 @@ public extern type Argv;
 public extern fun gtk_application_new(id: string, flags: i32): GtkApplication;
 public extern fun g_application_run(app: GtkApplication, argc: i32, argv: Option<Argv>): i32;
 public extern fun g_application_quit(app: GtkApplication);
+/** Keeps the application running with no window open, until a matching `g_application_release`. */
+public extern fun g_application_hold(app: GtkApplication);
+public extern fun g_application_release(app: GtkApplication);
 public extern fun g_object_unref(object: GtkApplication);
 
 public extern fun gtk_application_window_new(app: GtkApplication): GtkWidget;
@@ -29,6 +32,7 @@ public extern fun gtk_window_set_title(window: GtkWidget, title: string);
 public extern fun gtk_window_set_default_size(window: GtkWidget, width: i32, height: i32);
 public extern fun gtk_window_set_child(window: GtkWidget, child: GtkWidget);
 public extern fun gtk_window_present(window: GtkWidget);
+public extern fun gtk_window_get_title(window: GtkWidget): Option<string>;
 
 /** `orientation`: 0 horizontal, 1 vertical (`GtkOrientation`). */
 public extern fun gtk_box_new(orientation: i32, spacing: i32): GtkWidget;
@@ -161,3 +165,28 @@ public extern "g_signal_connect_data" fun connect_widget(
     destroy: release,
     flags: i32,
 ): u64;
+
+// GLib timers and clocks.
+
+/**
+ * Calls `function` every `interval` milliseconds on the main loop while it
+ * returns 1 (G_SOURCE_CONTINUE); returning 0 (G_SOURCE_REMOVE) stops it.
+ * `priority` is a GLib priority (0 is G_PRIORITY_DEFAULT).
+ * @returns the source id, for `g_source_remove`.
+ */
+public extern fun g_timeout_add_full(
+    priority: i32,
+    interval: u32,
+    function: fun(data): i32,
+    user: data,
+    notify: release,
+): u32;
+
+/** Stops the timer `tag`; 1 if it was running. */
+public extern fun g_source_remove(tag: u32): i32;
+
+/** Wall-clock time in microseconds since 1970. */
+public extern fun g_get_real_time(): i64;
+
+/** Microseconds from an arbitrary start that never jumps; for measuring intervals. */
+public extern fun g_get_monotonic_time(): i64;

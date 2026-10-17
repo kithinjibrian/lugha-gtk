@@ -1,0 +1,59 @@
+// GLib timers on a running main loop: a one-off timer, a repeating one that
+// stops itself, a removed one that never fires, and the clocks. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    g_get_monotonic_time,
+    g_get_real_time,
+    g_source_remove,
+    g_timeout_add_full,
+    gtk_application_window_new,
+    gtk_window_get_title,
+    gtk_window_set_title,
+    run,
+};
+
+@test
+fun timers_fire_repeat_stop_and_can_be_removed() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let events: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        events.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    let title = Ref.new("");
+    let start = g_get_monotonic_time();
+    run("org.lugha.test.timers", fun(a: Application) {
+        // A window keeps the application running while the timers fire.
+        let window = gtk_application_window_new(a.handle());
+        gtk_window_set_title(window, "Timers");
+        title.set(gtk_window_get_title(window).unwrap_or("?"));
+        let never = g_timeout_add_full(0, 5, fun(): i32 {
+            note("never");
+            0
+        });
+        g_source_remove(never);
+        let ticks = Ref.new(0);
+        g_timeout_add_full(0, 10, fun(): i32 {
+            ticks.update(fun(n) = n + 1);
+            note("tick {ticks.get()}");
+            if ticks.get() < 3 { 1 } else { 0 }
+        });
+        g_timeout_add_full(0, 80, fun(): i32 {
+            note("once");
+            a.quit();
+            0
+        });
+    });
+    let took = (g_get_monotonic_time() - start) / 1000;
+    assert_eq(events.get(), ["tick 1", "tick 2", "tick 3", "once"]);
+    assert_eq(title.get(), "Timers");
+    assert(took >= 80);
+    // Real time is after 2020-01-01 (1577836800 s).
+    assert(g_get_real_time() / 1000000 > 1577836800);
+}
