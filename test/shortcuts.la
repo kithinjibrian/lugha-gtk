@@ -7,7 +7,12 @@ import gtk {
     GVariant,
     GtkShortcutAction,
     GtkWidget,
+    g_free,
     gtk_application_window_new,
+    gtk_shortcut_get_action,
+    gtk_shortcut_get_trigger,
+    gtk_shortcut_trigger_to_string,
+    lgtk_cstring_text,
     gtk_box_append,
     gtk_box_new,
     gtk_button_new_with_label,
@@ -58,10 +63,14 @@ fun a_shortcut_runs_its_action_and_focus_reads_back() {
         let controller = gtk_shortcut_controller_new();
         gtk_shortcut_controller_set_scope(controller, 2);
         match gtk_shortcut_trigger_parse_string("<Control>n") {
-            Some(trigger) => gtk_shortcut_controller_add_shortcut(
-                controller,
-                gtk_shortcut_new(trigger, gtk_shortcut_action_ref(action)),
-            ),
+            Some(trigger) => {
+                let shortcut = gtk_shortcut_new(trigger, gtk_shortcut_action_ref(action));
+                gtk_shortcut_controller_add_shortcut(controller, shortcut);
+                let text = gtk_shortcut_trigger_to_string(gtk_shortcut_get_trigger(shortcut));
+                note("trigger {lgtk_cstring_text(text)}");
+                g_free(text);
+                note("same action: {gtk_shortcut_get_action(shortcut) == action}");
+            }
             None => note("no trigger"),
         }
         gtk_widget_add_controller(button, controller);
@@ -80,5 +89,11 @@ fun a_shortcut_runs_its_action_and_focus_reads_back() {
         gtk_shortcut_action_activate(action, 0, button, None);
         a.quit();
     });
-    assert_eq(seen.get(), ["bad parses: true", "focus entry", "shortcut on the button"]);
+    assert_eq(seen.get(), [
+        "bad parses: true",
+        "trigger <Control>n",
+        "same action: true",
+        "focus entry",
+        "shortcut on the button",
+    ]);
 }

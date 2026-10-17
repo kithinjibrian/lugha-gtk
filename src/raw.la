@@ -334,6 +334,13 @@ public extern fun gtk_shortcut_action_activate(
     args: Option<GVariant>,
 ): i32;
 
+/** The shortcut's trigger (the shortcut keeps it: don't free). */
+public extern fun gtk_shortcut_get_trigger(shortcut: GtkShortcut): GtkShortcutTrigger;
+/** The shortcut's action (the shortcut keeps it: don't free). */
+public extern fun gtk_shortcut_get_action(shortcut: GtkShortcut): GtkShortcutAction;
+/** The trigger in GTK's syntax (`<Control>n`), allocated: read with `lgtk_cstring_text`, then `g_free`. */
+public extern fun gtk_shortcut_trigger_to_string(trigger: GtkShortcutTrigger): OwnedText;
+
 /** Gives `widget` keyboard focus; 1 if it took it. */
 public extern fun gtk_widget_grab_focus(widget: GtkWidget): i32;
 /** Whether `widget` is inside `ancestor` (a child, grandchild, …); `gboolean` as `i32`. */
