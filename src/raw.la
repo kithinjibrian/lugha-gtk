@@ -84,6 +84,10 @@ public extern fun gtk_entry_set_placeholder_text(entry: GtkWidget, text: Option<
 public extern fun gtk_entry_get_placeholder_text(entry: GtkWidget): Option<string>;
 public extern fun gtk_editable_get_text(editable: GtkWidget): string;
 public extern fun gtk_editable_set_text(editable: GtkWidget, text: string);
+/** The cursor's position in characters (from 0). */
+public extern fun gtk_editable_get_position(editable: GtkWidget): i32;
+/** Puts the cursor at `position` characters; -1 is the end. */
+public extern fun gtk_editable_set_position(editable: GtkWidget, position: i32);
 
 // GtkCheckButton. Its booleans are C `gboolean`s (`int`): 0 is false.
 public extern fun gtk_check_button_new_with_label(label: string): GtkWidget;
@@ -194,3 +198,15 @@ public extern fun g_get_real_time(): i64;
 
 /** Microseconds from an arbitrary start that never jumps; for measuring intervals. */
 public extern fun g_get_monotonic_time(): i64;
+
+/**
+ * Calls `notify` once `widget` is finalized: destroyed and its last reference
+ * gone, its signal handlers released. The widget it's given is already gone:
+ * don't use it. GLib takes no release function here, so the closure stays
+ * pinned for the program's life; meant for tests and checks, not per widget.
+ */
+public extern "g_object_weak_ref" fun on_finalized(
+    widget: GtkWidget,
+    notify: fun(data, GtkWidget),
+    user: data,
+);

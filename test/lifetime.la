@@ -1,0 +1,50 @@
+// Widget lifetime and the text cursor: a label removed from its box is
+// finalized; an entry's cursor reads back where it was put. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GtkWidget,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_box_remove,
+    gtk_editable_get_position,
+    gtk_editable_set_position,
+    gtk_editable_set_text,
+    gtk_entry_new,
+    gtk_label_new,
+    on_finalized,
+    run,
+};
+
+@test
+fun a_removed_widget_is_finalized_and_the_cursor_reads_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.lifetime", fun(a: Application) {
+        let box = gtk_box_new(1, 0);
+        let label = gtk_label_new("bye");
+        gtk_box_append(box, label);
+        on_finalized(label, fun(gone: GtkWidget) {
+            note("finalized");
+        });
+        note("removing");
+        gtk_box_remove(box, label);
+        note("removed");
+        let entry = gtk_entry_new();
+        gtk_editable_set_text(entry, "Ada");
+        gtk_editable_set_position(entry, 1);
+        note("cursor {gtk_editable_get_position(entry)}");
+        a.quit();
+    });
+    // The box held the label's only reference: removing it finalizes the label at once.
+    assert_eq(seen.get(), ["removing", "finalized", "removed", "cursor 1"]);
+}
