@@ -43,3 +43,31 @@ fun expanding_separators_and_scrolling_read_back() {
     });
     assert_eq(seen.get(), [1, 0, 1, 1, 1]);
 }
+
+@test
+fun spacing_alignment_and_margins_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<i32[]> = Ref.new([]);
+    run("org.lugha.test.align", fun(a: Application) {
+        let box = raw.gtk_box_new(1, 0);
+        raw.gtk_box_set_spacing(box, 8);
+        let label = raw.gtk_label_new("x");
+        raw.gtk_widget_set_halign(label, 3);
+        raw.gtk_widget_set_valign(label, 2);
+        raw.gtk_widget_set_margin_start(label, 12);
+        raw.gtk_widget_set_margin_top(label, 4);
+        // Accepted; GTK 4 reads it back only through out-parameters.
+        raw.gtk_widget_set_size_request(label, 100, -1);
+        seen.set([
+            raw.gtk_box_get_spacing(box),
+            raw.gtk_widget_get_halign(label),
+            raw.gtk_widget_get_valign(label),
+            raw.gtk_widget_get_margin_start(label),
+            raw.gtk_widget_get_margin_top(label),
+        ]);
+        a.quit();
+    });
+    assert_eq(seen.get(), [8, 3, 2, 12, 4]);
+}

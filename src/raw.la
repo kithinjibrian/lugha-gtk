@@ -27,6 +27,9 @@ public extern fun gtk_window_present(window: GtkWidget);
 /** `orientation`: 0 horizontal, 1 vertical (`GtkOrientation`). */
 public extern fun gtk_box_new(orientation: i32, spacing: i32): GtkWidget;
 public extern fun gtk_box_append(box: GtkWidget, child: GtkWidget);
+/** Pixels between a box's children. */
+public extern fun gtk_box_set_spacing(box: GtkWidget, spacing: i32);
+public extern fun gtk_box_get_spacing(box: GtkWidget): i32;
 /** Takes `child` out of `box`. */
 public extern fun gtk_box_remove(box: GtkWidget, child: GtkWidget);
 /** Puts `child` into `box` right after `sibling`, or first when `sibling` is `None`. */
@@ -65,6 +68,17 @@ public extern fun gtk_widget_set_margin_start(widget: GtkWidget, margin: i32);
 public extern fun gtk_widget_set_margin_end(widget: GtkWidget, margin: i32);
 public extern fun gtk_widget_set_margin_top(widget: GtkWidget, margin: i32);
 public extern fun gtk_widget_set_margin_bottom(widget: GtkWidget, margin: i32);
+public extern fun gtk_widget_get_margin_start(widget: GtkWidget): i32;
+public extern fun gtk_widget_get_margin_top(widget: GtkWidget): i32;
+
+/** `GtkAlign`: 0 fill, 1 start, 2 end, 3 center. */
+public extern fun gtk_widget_set_halign(widget: GtkWidget, align: i32);
+public extern fun gtk_widget_get_halign(widget: GtkWidget): i32;
+public extern fun gtk_widget_set_valign(widget: GtkWidget, align: i32);
+public extern fun gtk_widget_get_valign(widget: GtkWidget): i32;
+
+/** The smallest size `widget` may be given, in pixels; -1 leaves a side to the widget. */
+public extern fun gtk_widget_set_size_request(widget: GtkWidget, width: i32, height: i32);
 
 // Expanding: a widget given spare room along an axis (`gboolean` as `i32`).
 public extern fun gtk_widget_set_hexpand(widget: GtkWidget, expand: i32);
