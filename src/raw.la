@@ -198,6 +198,11 @@ public extern fun gtk_widget_set_visible(widget: GtkWidget, visible: i32);
  */
 public extern fun gtk_widget_set_overflow(widget: GtkWidget, overflow: i32);
 public extern fun gtk_widget_get_overflow(widget: GtkWidget): i32;
+/** Whether the widget itself can take keyboard focus (`gboolean` as `i32`); its children are unaffected. */
+public extern fun gtk_widget_set_focusable(widget: GtkWidget, focusable: i32);
+public extern fun gtk_widget_get_focusable(widget: GtkWidget): i32;
+/** The widget's parent, `None` for one not in a container. */
+public extern fun gtk_widget_get_parent(widget: GtkWidget): Option<GtkWidget>;
 public extern fun gtk_widget_get_visible(widget: GtkWidget): i32;
 
 /** Whether a widget responds to the user; an insensitive one is greyed out. `gboolean` as `i32`. */
@@ -500,6 +505,32 @@ public extern fun gtk_picture_get_paintable(picture: GtkWidget): Option<GdkTextu
 /** Shows `paintable` (a texture) in an image, at the image's size, taking its own reference. */
 public extern fun gtk_image_set_from_paintable(image: GtkWidget, paintable: Option<GdkTexture>);
 public extern fun gtk_image_get_paintable(image: GtkWidget): Option<GdkTexture>;
+
+// GtkFlowBox: children laid side by side, wrapping onto new lines. Each child
+// sits in a GtkFlowBoxChild the box makes; both are GtkWidgets here.
+
+public extern fun gtk_flow_box_new(): GtkWidget;
+/** Adds `widget` at `position` (-1: the end), wrapped in a new `GtkFlowBoxChild`. */
+public extern fun gtk_flow_box_insert(box: GtkWidget, widget: GtkWidget, position: i32);
+/** Removes a child: its `GtkFlowBoxChild`, or the widget inside one. */
+public extern fun gtk_flow_box_remove(box: GtkWidget, widget: GtkWidget);
+/** The `GtkFlowBoxChild` at `index`, `None` past the end. */
+public extern fun gtk_flow_box_get_child_at_index(box: GtkWidget, index: i32): Option<GtkWidget>;
+/** The widget a `GtkFlowBoxChild` holds. */
+public extern fun gtk_flow_box_child_get_child(child: GtkWidget): Option<GtkWidget>;
+/** Every child as wide as the widest (`gboolean` as `i32`). */
+public extern fun gtk_flow_box_set_homogeneous(box: GtkWidget, homogeneous: i32);
+public extern fun gtk_flow_box_get_homogeneous(box: GtkWidget): i32;
+public extern fun gtk_flow_box_set_row_spacing(box: GtkWidget, spacing: u32);
+public extern fun gtk_flow_box_get_row_spacing(box: GtkWidget): u32;
+public extern fun gtk_flow_box_set_column_spacing(box: GtkWidget, spacing: u32);
+public extern fun gtk_flow_box_get_column_spacing(box: GtkWidget): u32;
+/** At most this many children on a line. */
+public extern fun gtk_flow_box_set_max_children_per_line(box: GtkWidget, n_children: u32);
+public extern fun gtk_flow_box_get_max_children_per_line(box: GtkWidget): u32;
+/** `GtkSelectionMode`: 0 none, 1 single, 2 browse, 3 multiple. */
+public extern fun gtk_flow_box_set_selection_mode(box: GtkWidget, mode: i32);
+public extern fun gtk_flow_box_get_selection_mode(box: GtkWidget): i32;
 
 // App-wide styles, maximized windows and header bars.
 

@@ -1,0 +1,105 @@
+// A flow box: children inserted at positions and read back in order through
+// their GtkFlowBoxChild wrappers, removed by the widget inside, and its
+// settings (homogeneous, spacing, children per line, selection) set and read
+// back; a wrapper made not focusable; a widget's parent. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GtkWidget,
+    gtk_flow_box_child_get_child,
+    gtk_flow_box_get_child_at_index,
+    gtk_flow_box_get_column_spacing,
+    gtk_flow_box_get_homogeneous,
+    gtk_flow_box_get_max_children_per_line,
+    gtk_flow_box_get_row_spacing,
+    gtk_flow_box_get_selection_mode,
+    gtk_flow_box_insert,
+    gtk_flow_box_new,
+    gtk_flow_box_remove,
+    gtk_flow_box_set_column_spacing,
+    gtk_flow_box_set_homogeneous,
+    gtk_flow_box_set_max_children_per_line,
+    gtk_flow_box_set_row_spacing,
+    gtk_flow_box_set_selection_mode,
+    gtk_label_get_text,
+    gtk_label_new,
+    gtk_widget_get_focusable,
+    gtk_widget_get_parent,
+    gtk_widget_set_focusable,
+    run,
+};
+
+/** The flow box's children's label texts, in order. */
+fun order(box: GtkWidget): string {
+    let mut out: string[] = [];
+    let mut i = 0;
+    while i < 10 {
+        match gtk_flow_box_get_child_at_index(box, i as i32) {
+            Some(child) => match gtk_flow_box_child_get_child(child) {
+                Some(label) => out.push(gtk_label_get_text(label)),
+                None => out.push("?"),
+            },
+            None => {
+                i = 10;
+            }
+        }
+        i = i + 1;
+    }
+    out.join(" ")
+}
+
+@test
+fun flow_boxes_insert_remove_and_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.flowbox", fun(a: Application) {
+        let box = gtk_flow_box_new();
+        let a_label = gtk_label_new("a");
+        let c_label = gtk_label_new("c");
+        gtk_flow_box_insert(box, a_label, -1);
+        gtk_flow_box_insert(box, c_label, -1);
+        gtk_flow_box_insert(box, gtk_label_new("b"), 1);
+        note(order(box));
+        // The label's parent is its wrapper, the box's child at index 0.
+        let wrapper = gtk_widget_get_parent(a_label);
+        note("wrapped: {wrapper == gtk_flow_box_get_child_at_index(box, 0)}");
+        match wrapper {
+            Some(w) => {
+                note("wrapper focusable {gtk_widget_get_focusable(w)}");
+                gtk_widget_set_focusable(w, 0);
+                note("wrapper focusable {gtk_widget_get_focusable(w)}");
+            }
+            None => note("no wrapper"),
+        }
+        gtk_flow_box_remove(box, c_label);
+        note(order(box));
+        gtk_flow_box_set_homogeneous(box, 1);
+        gtk_flow_box_set_row_spacing(box, 8);
+        gtk_flow_box_set_column_spacing(box, 6);
+        gtk_flow_box_set_max_children_per_line(box, 4);
+        note("selection {gtk_flow_box_get_selection_mode(box)}");
+        gtk_flow_box_set_selection_mode(box, 0);
+        note(
+            "homogeneous {gtk_flow_box_get_homogeneous(box)} spacing {gtk_flow_box_get_row_spacing(box)} {gtk_flow_box_get_column_spacing(box)} max {gtk_flow_box_get_max_children_per_line(box)} selection {gtk_flow_box_get_selection_mode(box)}",
+        );
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "a b c",
+        "wrapped: true",
+        "wrapper focusable 1",
+        "wrapper focusable 0",
+        "a b",
+        "selection 1",
+        "homogeneous 1 spacing 8 6 max 4 selection 0",
+    ]);
+}
