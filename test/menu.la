@@ -1,0 +1,142 @@
+// A context menu's parts: a GMenu with two sections naming actions, the
+// actions in a group on a widget (activated, and ignored when disabled), a
+// GtkPopoverMenu parented to the widget popped up and down, and click and
+// long-press gestures whose `pressed` reports where. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GVariant,
+    GdkRectangle,
+    GSimpleAction,
+    GtkEventController,
+    connect_action,
+    connect_click,
+    connect_long_press,
+    g_action_activate,
+    g_action_map_add_action,
+    g_menu_append,
+    g_menu_append_section,
+    g_menu_new,
+    g_menu_unref,
+    g_simple_action_group_new,
+    g_simple_action_group_unref,
+    g_simple_action_new,
+    g_simple_action_set_enabled,
+    g_simple_action_unref,
+    gtk_application_window_new,
+    gtk_box_new,
+    gtk_gesture_click_new,
+    gtk_gesture_long_press_new,
+    gtk_gesture_single_set_button,
+    gtk_popover_menu_new_from_model,
+    gtk_popover_popdown,
+    gtk_popover_popup,
+    gtk_popover_set_has_arrow,
+    gtk_popover_set_pointing_to,
+    gtk_widget_add_controller,
+    gtk_widget_get_visible,
+    gtk_widget_insert_action_group,
+    gtk_widget_set_parent,
+    gtk_widget_unparent,
+    gtk_window_set_child,
+    lgtk_emit_pressed,
+    run,
+};
+
+@test
+fun menus_actions_popovers_and_gestures_work() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.menu", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let box = gtk_box_new(1, 0);
+        gtk_window_set_child(window, box);
+        // Two actions in a group on the box, under "kv".
+        let group = g_simple_action_group_new();
+        let names = ["item0", "item1"];
+        let mut actions: GSimpleAction[] = [];
+        for name of names {
+            let action = g_simple_action_new(name, None);
+            connect_action(
+                action,
+                "activate",
+                fun(act: GSimpleAction, param: Option<GVariant>) {
+                    note("activated {name}");
+                },
+                0,
+            );
+            g_action_map_add_action(group, action);
+            actions.push(action);
+        }
+        gtk_widget_insert_action_group(box, "kv", Some(group));
+        g_simple_action_group_unref(group);
+        // A menu: one item, then a section with the other.
+        let menu = g_menu_new();
+        g_menu_append(menu, Some("Open"), Some("kv.item0"));
+        let section = g_menu_new();
+        g_menu_append(section, Some("Close"), Some("kv.item1"));
+        g_menu_append_section(menu, None, section);
+        g_menu_unref(section);
+        let popover = gtk_popover_menu_new_from_model(Some(menu));
+        g_menu_unref(menu);
+        gtk_widget_set_parent(popover, box);
+        gtk_popover_set_has_arrow(popover, 0);
+        gtk_popover_set_pointing_to(popover, ptr GdkRectangle { x: 5, y: 6, width: 1, height: 1 });
+        // Activating actions, as picking items does; a disabled one is ignored.
+        g_action_activate(actions[0], None);
+        g_simple_action_set_enabled(actions[1], 0);
+        g_action_activate(actions[1], None);
+        g_simple_action_set_enabled(actions[1], 1);
+        g_action_activate(actions[1], None);
+        // Gestures report where they were pressed.
+        let click = gtk_gesture_click_new();
+        gtk_gesture_single_set_button(click, 3);
+        connect_click(
+            click,
+            "pressed",
+            fun(g: GtkEventController, n: i32, x: f64, y: f64) {
+                note("clicked {n} at {x as i64},{y as i64}");
+            },
+            0,
+        );
+        gtk_widget_add_controller(box, click);
+        let hold = gtk_gesture_long_press_new();
+        connect_long_press(
+            hold,
+            "pressed",
+            fun(g: GtkEventController, x: f64, y: f64) {
+                note("long press at {x as i64},{y as i64}");
+            },
+            0,
+        );
+        gtk_widget_add_controller(box, hold);
+        lgtk_emit_pressed(click, 1, 12.0, 34.0);
+        lgtk_emit_pressed(hold, -1, 7.0, 8.0);
+        gtk_popover_popup(popover);
+        note("popped up: {gtk_widget_get_visible(popover)}");
+        gtk_popover_popdown(popover);
+        note("popped down: {gtk_widget_get_visible(popover)}");
+        gtk_widget_unparent(popover);
+        for action of actions {
+            g_simple_action_unref(action);
+        }
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "activated item0",
+        "activated item1",
+        "clicked 1 at 12,34",
+        "long press at 7,8",
+        "popped up: 1",
+        "popped down: 0",
+    ]);
+}

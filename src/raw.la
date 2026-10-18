@@ -61,6 +61,26 @@ public extern type GdkTexture;
 /** A `GError *`: what went wrong, from a call taking `GError **`; free it with `g_error_free`. */
 public extern type GError;
 
+/** A `GMenu *`: a menu model, its items naming actions. */
+public extern type GMenu;
+
+/** A `GSimpleAction *`: an action a menu item triggers. */
+public extern type GSimpleAction;
+
+/** A `GSimpleActionGroup *`: actions inserted on a widget under a prefix. */
+public extern type GSimpleActionGroup;
+
+/** A `GVariantType *`: an action's parameter type (kivuli passes `None`: no parameter). */
+public extern type GVariantType;
+
+/** A `GdkRectangle`: where a popover points, in its parent's coordinates. */
+public extern struct GdkRectangle {
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+}
+
 /** A `GFile *`: a file's location, such as the one a picture shows. */
 public extern type GFile;
 
@@ -542,6 +562,87 @@ public extern fun gtk_overlay_get_child(overlay: GtkWidget): Option<GtkWidget>;
 /** Adds `widget` on top of the overlays already there. */
 public extern fun gtk_overlay_add_overlay(overlay: GtkWidget, widget: GtkWidget);
 public extern fun gtk_overlay_remove_overlay(overlay: GtkWidget, widget: GtkWidget);
+
+// Context menus: a GMenu of items naming actions (`prefix.name`), the actions
+// in a group inserted on a widget, a GtkPopoverMenu parented to it, and the
+// gestures that open it.
+
+public extern fun g_menu_new(): GMenu;
+/** Adds an item showing `label` that triggers `detailed_action` (`"kv.item0"`). */
+public extern fun g_menu_append(
+    menu: GMenu,
+    label: Option<string>,
+    detailed_action: Option<string>,
+);
+/** Adds `section` as a section (separated from the items around it). */
+public extern fun g_menu_append_section(menu: GMenu, label: Option<string>, section: GMenu);
+public extern "g_object_unref" fun g_menu_unref(menu: GMenu);
+/** A new action called `name`; `parameter_type` `None`: activated without a parameter. */
+public extern fun g_simple_action_new(
+    name: string,
+    parameter_type: Option<GVariantType>,
+): GSimpleAction;
+/** Whether the action can be activated (`gboolean` as `i32`); a disabled one ignores activation. */
+public extern fun g_simple_action_set_enabled(action: GSimpleAction, enabled: i32);
+public extern "g_object_unref" fun g_simple_action_unref(action: GSimpleAction);
+/** Activates the action as a menu item would (tests). */
+public extern fun g_action_activate(action: GSimpleAction, parameter: Option<GVariant>);
+/** Connects an action's `activate`, which takes the action and its parameter. */
+public extern "g_signal_connect_data" fun connect_action(
+    instance: GSimpleAction,
+    signal: string,
+    handler: fun(GSimpleAction, Option<GVariant>, data),
+    user: data,
+    destroy: release,
+    flags: i32,
+): u64;
+public extern fun g_simple_action_group_new(): GSimpleActionGroup;
+public extern fun g_action_map_add_action(action_map: GSimpleActionGroup, action: GSimpleAction);
+public extern "g_object_unref" fun g_simple_action_group_unref(group: GSimpleActionGroup);
+/** Makes `group`'s actions reachable from `widget` and its children as `name.action`. */
+public extern fun gtk_widget_insert_action_group(
+    widget: GtkWidget,
+    name: string,
+    group: Option<GSimpleActionGroup>,
+);
+/** A popover menu showing `model` (it takes its own reference). */
+public extern fun gtk_popover_menu_new_from_model(model: Option<GMenu>): GtkWidget;
+public extern fun gtk_popover_menu_set_menu_model(popover: GtkWidget, model: Option<GMenu>);
+/** Where the popover points, in its parent's coordinates. */
+public extern fun gtk_popover_set_pointing_to(popover: GtkWidget, ptr rect: GdkRectangle);
+public extern fun gtk_popover_set_has_arrow(popover: GtkWidget, has_arrow: i32);
+public extern fun gtk_popover_popup(popover: GtkWidget);
+public extern fun gtk_popover_popdown(popover: GtkWidget);
+/** Makes `widget` a child of `parent` outside any container (a popover's parent). */
+public extern fun gtk_widget_set_parent(widget: GtkWidget, parent: GtkWidget);
+public extern fun gtk_widget_unparent(widget: GtkWidget);
+public extern fun gtk_widget_get_width(widget: GtkWidget): i32;
+public extern fun gtk_widget_get_height(widget: GtkWidget): i32;
+/** A click gesture (a `GtkEventController`); `gtk_gesture_single_set_button` picks the button. */
+public extern fun gtk_gesture_click_new(): GtkEventController;
+public extern fun gtk_gesture_long_press_new(): GtkEventController;
+/** Which mouse button the gesture listens to: 1 primary, 3 secondary, 0 any. */
+public extern fun gtk_gesture_single_set_button(gesture: GtkEventController, button: u32);
+/** Connects a click gesture's `pressed`: the press count and where, in the widget. */
+public extern "g_signal_connect_data" fun connect_click(
+    instance: GtkEventController,
+    signal: string,
+    handler: fun(GtkEventController, i32, f64, f64, data),
+    user: data,
+    destroy: release,
+    flags: i32,
+): u64;
+/** Connects a long-press gesture's `pressed`: where, in the widget. */
+public extern "g_signal_connect_data" fun connect_long_press(
+    instance: GtkEventController,
+    signal: string,
+    handler: fun(GtkEventController, f64, f64, data),
+    user: data,
+    destroy: release,
+    flags: i32,
+): u64;
+/** Emits a gesture's `pressed` (tests): `n` < 0 for a long press, which has no count (src/c/signals.c). */
+public extern fun lgtk_emit_pressed(gesture: GtkEventController, n: i32, x: f64, y: f64);
 
 // App-wide styles, maximized windows and header bars.
 
