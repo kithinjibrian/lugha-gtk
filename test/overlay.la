@@ -1,0 +1,77 @@
+// An overlay: a main child and overlay widgets on top, added in order, read
+// back as the overlay's children (the main child first), placed by their own
+// alignment, and removed. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GtkWidget,
+    gtk_label_get_text,
+    gtk_label_new,
+    gtk_overlay_add_overlay,
+    gtk_overlay_get_child,
+    gtk_overlay_new,
+    gtk_overlay_remove_overlay,
+    gtk_overlay_set_child,
+    gtk_widget_get_first_child,
+    gtk_widget_get_halign,
+    gtk_widget_get_next_sibling,
+    gtk_widget_set_halign,
+    run,
+};
+
+/** The overlay's children's label texts, in order. */
+fun order(overlay: GtkWidget): string {
+    let mut out: string[] = [];
+    let mut next = gtk_widget_get_first_child(overlay);
+    let mut guard = 0;
+    while guard < 10 {
+        match next {
+            Some(w) => {
+                out.push(gtk_label_get_text(w));
+                next = gtk_widget_get_next_sibling(w);
+            }
+            None => {
+                guard = 10;
+            }
+        }
+        guard = guard + 1;
+    }
+    out.join(" ")
+}
+
+@test
+fun overlays_stack_on_their_child_and_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.overlay", fun(a: Application) {
+        let overlay = gtk_overlay_new();
+        let base = gtk_label_new("base");
+        let panel = gtk_label_new("panel");
+        let toast = gtk_label_new("toast");
+        gtk_overlay_set_child(overlay, Some(base));
+        gtk_overlay_add_overlay(overlay, panel);
+        gtk_overlay_add_overlay(overlay, toast);
+        note(order(overlay));
+        note("child is the base: {gtk_overlay_get_child(overlay) == Some(base)}");
+        gtk_widget_set_halign(panel, 2);
+        note("panel halign {gtk_widget_get_halign(panel)}");
+        gtk_overlay_remove_overlay(overlay, panel);
+        note(order(overlay));
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "base panel toast",
+        "child is the base: true",
+        "panel halign 2",
+        "base toast",
+    ]);
+}

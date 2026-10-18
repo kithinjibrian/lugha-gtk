@@ -532,6 +532,17 @@ public extern fun gtk_flow_box_get_max_children_per_line(box: GtkWidget): u32;
 public extern fun gtk_flow_box_set_selection_mode(box: GtkWidget, mode: i32);
 public extern fun gtk_flow_box_get_selection_mode(box: GtkWidget): i32;
 
+// GtkOverlay: one child, with overlay widgets drawn on top of it, each placed
+// by its own halign and valign.
+
+public extern fun gtk_overlay_new(): GtkWidget;
+/** The main child, under the overlays; `None` removes it. */
+public extern fun gtk_overlay_set_child(overlay: GtkWidget, child: Option<GtkWidget>);
+public extern fun gtk_overlay_get_child(overlay: GtkWidget): Option<GtkWidget>;
+/** Adds `widget` on top of the overlays already there. */
+public extern fun gtk_overlay_add_overlay(overlay: GtkWidget, widget: GtkWidget);
+public extern fun gtk_overlay_remove_overlay(overlay: GtkWidget, widget: GtkWidget);
+
 // App-wide styles, maximized windows and header bars.
 
 public extern fun gtk_css_provider_new(): GtkCssProvider;
