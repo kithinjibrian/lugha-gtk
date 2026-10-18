@@ -75,10 +75,10 @@ public extern type GVariantType;
 
 /** A `GdkRectangle`: where a popover points, in its parent's coordinates. */
 public extern struct GdkRectangle {
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
+    public x: i32,
+    public y: i32,
+    public width: i32,
+    public height: i32,
 }
 
 /** A `GFile *`: a file's location, such as the one a picture shows. */
