@@ -1,0 +1,99 @@
+// A clamp: one child, measured as the child is but kept within limits, never
+// below the child's own minimum; -1 is no limit; new limits re-measure; the
+// child goes when the clamp does. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GtkWidget,
+    gtk_application_window_new,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_box_remove,
+    gtk_label_new,
+    gtk_label_set_wrap,
+    gtk_widget_measure,
+    gtk_widget_set_size_request,
+    gtk_window_set_child,
+    lgtk_clamp_get_child,
+    lgtk_clamp_new,
+    lgtk_clamp_set_child,
+    lgtk_clamp_set_limits,
+    on_finalized,
+    run,
+};
+
+/** The widget's minimum and natural size one way (0 across, 1 down), for any size the other way. */
+fun measured(w: GtkWidget, orientation: i32): (i32, i32) {
+    let mut minimum: i32 = 0;
+    let mut natural: i32 = 0;
+    let mut minimum_baseline: i32 = 0;
+    let mut natural_baseline: i32 = 0;
+    gtk_widget_measure(
+        w,
+        orientation,
+        -1,
+        out minimum,
+        out natural,
+        out minimum_baseline,
+        out natural_baseline,
+    );
+    (minimum, natural)
+}
+
+@test
+fun a_clamp_keeps_its_childs_size_within_its_limits() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.clamp", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let holder = gtk_box_new(1, 0);
+        gtk_window_set_child(window, holder);
+        // A child exactly 50 x 20.
+        let child = gtk_box_new(0, 0);
+        gtk_widget_set_size_request(child, 50, 20);
+        let clamp = lgtk_clamp_new();
+        lgtk_clamp_set_child(clamp, Some(child));
+        gtk_box_append(holder, clamp);
+        note("child kept {lgtk_clamp_get_child(clamp) == Some(child)}");
+        note("no limits {measured(clamp, 0)} {measured(clamp, 1)}");
+        lgtk_clamp_set_limits(clamp, 80, -1, -1, -1);
+        note("min 80 {measured(clamp, 0)}");
+        lgtk_clamp_set_limits(clamp, 100, 100, 30, 30);
+        note("exactly 100 x 30 {measured(clamp, 0)} {measured(clamp, 1)}");
+        // A maximum below the child's minimum gives the child's minimum.
+        lgtk_clamp_set_limits(clamp, -1, 30, -1, -1);
+        note("max 30 {measured(clamp, 0)}");
+        // A wrapping label: small minimum, large natural; a maximum caps the natural.
+        let label = gtk_label_new("a long line of text that would like to be very wide indeed");
+        gtk_label_set_wrap(label, 1);
+        lgtk_clamp_set_child(clamp, Some(label));
+        lgtk_clamp_set_limits(clamp, -1, 120, -1, -1);
+        let (low, high) = measured(clamp, 0);
+        note("wrapping: natural {high <= 120}, minimum {low <= high}");
+        note("old child freed when replaced: {lgtk_clamp_get_child(clamp) == Some(label)}");
+        on_finalized(label, fun(gone: GtkWidget) {
+            note("label freed");
+        });
+        gtk_box_remove(holder, clamp);
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "child kept true",
+        "no limits (50, 50) (20, 20)",
+        "min 80 (80, 80)",
+        "exactly 100 x 30 (100, 100) (30, 30)",
+        "max 30 (50, 50)",
+        "wrapping: natural true, minimum true",
+        "old child freed when replaced: true",
+        "label freed",
+    ]);
+}

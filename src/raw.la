@@ -644,6 +644,33 @@ public extern "g_signal_connect_data" fun connect_long_press(
 /** Emits a gesture's `pressed` (tests): `n` < 0 for a long press, which has no count (src/c/signals.c). */
 public extern fun lgtk_emit_pressed(gesture: GtkEventController, n: i32, x: f64, y: f64);
 
+// Sizes: measuring a widget, and a clamp keeping its one child's size within
+// limits (GTK has minimum sizes only): src/c/clamp.c.
+
+/** A widget's minimum and natural size one way (0 across, 1 down), for `for_size` the other way (-1: any). */
+public extern fun gtk_widget_measure(
+    widget: GtkWidget,
+    orientation: i32,
+    for_size: i32,
+    out minimum: i32,
+    out natural: i32,
+    out minimum_baseline: i32,
+    out natural_baseline: i32,
+);
+/** A clamp: one child, sized as the child is but kept within limits, never below the child's minimum. */
+public extern fun lgtk_clamp_new(): GtkWidget;
+/** Replaces the clamp's child (the old one is unparented); `None` empties it. */
+public extern fun lgtk_clamp_set_child(clamp: GtkWidget, child: Option<GtkWidget>);
+public extern fun lgtk_clamp_get_child(clamp: GtkWidget): Option<GtkWidget>;
+/** The clamp's limits in pixels, each way; -1 is no limit. Given more than its maximum, the child gets the maximum, at the start. */
+public extern fun lgtk_clamp_set_limits(
+    clamp: GtkWidget,
+    min_width: i32,
+    max_width: i32,
+    min_height: i32,
+    max_height: i32,
+);
+
 // App-wide styles, maximized windows and header bars.
 
 public extern fun gtk_css_provider_new(): GtkCssProvider;
