@@ -691,6 +691,12 @@ public extern fun gtk_widget_get_display(widget: GtkWidget): GdkDisplay;
 public extern fun lgtk_remove_css_classes_with_prefix(widget: GtkWidget, prefix: string);
 /** The widget's text colour as 0xRRGGBBAA (src/c/look.c; for tests). */
 public extern fun lgtk_widget_rgba(widget: GtkWidget): u32;
+/** Sets GTK's colour scheme (`GtkInterfaceColorScheme`: 2 dark, 3 light), which its widgets and CSS's `prefers-color-scheme` follow (src/c/settings.c). */
+public extern fun lgtk_set_color_scheme(scheme: i32);
+/** Gives the colour scheme back to the system's own choice (src/c/settings.c). */
+public extern fun lgtk_reset_color_scheme();
+/** The current colour scheme (src/c/settings.c). */
+public extern fun lgtk_color_scheme(): i32;
 /** Maximizes the window; before it's shown, it opens maximized. */
 public extern fun gtk_window_maximize(window: GtkWidget);
 public extern fun gtk_window_is_maximized(window: GtkWidget): i32;

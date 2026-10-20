@@ -1,0 +1,31 @@
+// The colour scheme GTK's widgets and `prefers-color-scheme` follow: set to
+// dark or light, read back, and reset to the system's own. Needs a display.
+import std.env;
+import gtk { Application, lgtk_color_scheme, lgtk_reset_color_scheme, lgtk_set_color_scheme, run };
+
+@test
+fun the_color_scheme_is_set_and_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<i32[]> = Ref.new([]);
+    run("org.lugha.test.settings", fun(a: Application) {
+        let note = fun(n: i32) {
+            seen.update(fun(xs) {
+                let mut ys = xs;
+                ys.push(n);
+                ys
+            });
+        };
+        // GtkInterfaceColorScheme: 2 dark, 3 light; the system's own comes back on reset.
+        let own = lgtk_color_scheme();
+        lgtk_set_color_scheme(2);
+        note(lgtk_color_scheme());
+        lgtk_set_color_scheme(3);
+        note(lgtk_color_scheme());
+        lgtk_reset_color_scheme();
+        note(if lgtk_color_scheme() == own { 0 } else { -1 });
+        a.quit();
+    });
+    assert_eq(seen.get(), [2, 3, 0]);
+}
