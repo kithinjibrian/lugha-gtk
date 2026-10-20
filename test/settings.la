@@ -6,8 +6,12 @@ import gtk {
     lgtk_color_scheme,
     lgtk_css_provider_color_scheme,
     lgtk_css_provider_new_for_scheme,
+    lgtk_css_provider_reduced_motion,
+    lgtk_reduced_motion,
     lgtk_reset_color_scheme,
+    lgtk_reset_reduced_motion,
     lgtk_set_color_scheme,
+    lgtk_set_reduced_motion,
     run,
 };
 
@@ -63,4 +67,33 @@ fun a_provider_for_the_scheme_follows_it() {
         a.quit();
     });
     assert_eq(seen.get(), [2, 3, 0]);
+}
+
+@test
+fun reduced_motion_is_set_read_back_and_followed() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<i32[]> = Ref.new([]);
+    run("org.lugha.test.reduced_motion", fun(a: Application) {
+        let note = fun(n: i32) {
+            seen.update(fun(xs) {
+                let mut ys = xs;
+                ys.push(n);
+                ys
+            });
+        };
+        // GtkReducedMotion: 0 no preference, 1 reduce.
+        let own = lgtk_reduced_motion();
+        let provider = lgtk_css_provider_new_for_scheme();
+        lgtk_set_reduced_motion(1);
+        note(lgtk_reduced_motion());
+        note(lgtk_css_provider_reduced_motion(provider));
+        lgtk_set_reduced_motion(0);
+        note(lgtk_css_provider_reduced_motion(provider));
+        lgtk_reset_reduced_motion();
+        note(if lgtk_reduced_motion() == own { 0 } else { -1 });
+        a.quit();
+    });
+    assert_eq(seen.get(), [1, 1, 0, 0]);
 }
