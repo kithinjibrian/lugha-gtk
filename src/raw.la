@@ -417,6 +417,8 @@ public extern fun gtk_widget_is_ancestor(widget: GtkWidget, ancestor: GtkWidget)
 
 /** The widget with keyboard focus in `window`, if any; a text field's focus sits on a widget inside it. */
 public extern fun gtk_root_get_focus(window: GtkWidget): Option<GtkWidget>;
+/** Gives `focus` the window's keyboard focus; `None` leaves nothing focused. */
+public extern fun gtk_window_set_focus(window: GtkWidget, focus: Option<GtkWidget>);
 
 // Drop-downs over a string list, and scales (sliders).
 

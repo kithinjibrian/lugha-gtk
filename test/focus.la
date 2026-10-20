@@ -1,0 +1,48 @@
+// A window's keyboard focus set and cleared: gtk_window_set_focus with a
+// widget focuses it, with None leaves nothing focused. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_application_window_new,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_entry_new,
+    gtk_root_get_focus,
+    gtk_widget_is_ancestor,
+    gtk_window_set_child,
+    gtk_window_set_focus,
+    run,
+};
+
+@test
+fun a_windows_focus_is_set_and_cleared() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.focus", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let box = gtk_box_new(1, 0);
+        gtk_window_set_child(window, box);
+        let entry = gtk_entry_new();
+        gtk_box_append(box, entry);
+        gtk_window_set_focus(window, Some(entry));
+        // An entry's focus sits on the text widget inside it.
+        let focused = match gtk_root_get_focus(window) {
+            Some(w) => w == entry || gtk_widget_is_ancestor(w, entry) == 1,
+            None => false,
+        };
+        note("set: in the entry {focused}");
+        gtk_window_set_focus(window, None);
+        note("cleared: {gtk_root_get_focus(window).is_none()}");
+        a.quit();
+    });
+    assert_eq(seen.get(), ["set: in the entry true", "cleared: true"]);
+}
