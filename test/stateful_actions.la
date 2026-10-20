@@ -1,0 +1,48 @@
+// Stateful actions for check and radio menu items: a boolean state and a
+// string state set and read back, and an activation's string target read.
+// No display needed.
+import gtk {
+    GSimpleAction,
+    GVariant,
+    connect_action,
+    g_action_activate,
+    g_simple_action_new_stateful,
+    g_simple_action_set_state,
+    g_variant_new_boolean,
+    g_variant_new_string,
+    g_variant_type_free,
+    g_variant_type_new,
+    lgtk_action_state_bool,
+    lgtk_action_state_string,
+    lgtk_variant_string,
+};
+
+@test
+fun stateful_actions_hold_their_state_and_take_targets() {
+    let check = g_simple_action_new_stateful("check0", None, g_variant_new_boolean(1));
+    assert_eq(lgtk_action_state_bool(check), 1);
+    g_simple_action_set_state(check, g_variant_new_boolean(0));
+    assert_eq(lgtk_action_state_bool(check), 0);
+    let kind = g_variant_type_new("s");
+    let radio = g_simple_action_new_stateful("radio0", Some(kind), g_variant_new_string("Top"));
+    g_variant_type_free(kind);
+    assert_eq(lgtk_action_state_string(radio), "Top");
+    g_simple_action_set_state(radio, g_variant_new_string("Bottom"));
+    assert_eq(lgtk_action_state_string(radio), "Bottom");
+    let seen: Ref<string> = Ref.new("");
+    connect_action(
+        radio,
+        "activate",
+        fun(a: GSimpleAction, param: Option<GVariant>) {
+            match param {
+                Some(v) => seen.set(lgtk_variant_string(v)),
+                None => {}
+            }
+        },
+        0,
+    );
+    g_action_activate(radio, Some(g_variant_new_string("Right")));
+    assert_eq(seen.get(), "Right");
+    // An activate handler is connected: GTK leaves the state to it.
+    assert_eq(lgtk_action_state_string(radio), "Bottom");
+}
