@@ -1,0 +1,25 @@
+// A progress bar's fraction, set and read back. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_progress_bar_get_fraction,
+    gtk_progress_bar_new,
+    gtk_progress_bar_set_fraction,
+    run,
+};
+
+@test
+fun a_progress_bars_fraction_reads_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<f64[]> = Ref.new([]);
+    run("org.lugha.test.progress", fun(a: Application) {
+        let bar = gtk_progress_bar_new();
+        gtk_progress_bar_set_fraction(bar, 0.25);
+        let f = gtk_progress_bar_get_fraction(bar);
+        seen.set([f]);
+        a.quit();
+    });
+    assert_eq(seen.get(), [0.25]);
+}

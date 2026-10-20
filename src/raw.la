@@ -197,6 +197,11 @@ public extern fun gtk_check_button_set_active(check: GtkWidget, active: i32);
 public extern fun gtk_switch_new(): GtkWidget;
 public extern fun gtk_switch_set_active(switch: GtkWidget, is_active: i32);
 public extern fun gtk_switch_get_active(switch: GtkWidget): i32;
+/** A progress bar: a track filled to its fraction (`gtkprogressbar.h`). */
+public extern fun gtk_progress_bar_new(): GtkWidget;
+/** How full it is, 0 to 1. */
+public extern fun gtk_progress_bar_set_fraction(bar: GtkWidget, fraction: f64);
+public extern fun gtk_progress_bar_get_fraction(bar: GtkWidget): f64;
 public extern fun gtk_check_button_get_label(check: GtkWidget): Option<string>;
 public extern fun gtk_check_button_set_label(check: GtkWidget, label: string);
 
