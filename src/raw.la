@@ -61,6 +61,9 @@ public extern type GBytes;
 /** A `GdkTexture *`: decoded image pixels; a `GdkPaintable`, so pictures and images show it. */
 public extern type GdkTexture;
 
+/** A `GtkSvg *` (GTK 4.22): an SVG drawn at any size; a `GdkPaintable`, so pictures and images show it. */
+public extern type GtkSvg;
+
 /** A `GError *`: what went wrong, from a call taking `GError **`; free it with `g_error_free`. */
 public extern type GError;
 
@@ -571,6 +574,36 @@ public extern fun gtk_picture_get_paintable(picture: GtkWidget): Option<GdkTextu
 /** Shows `paintable` (a texture) in an image, at the image's size, taking its own reference. */
 public extern fun gtk_image_set_from_paintable(image: GtkWidget, paintable: Option<GdkTexture>);
 public extern fun gtk_image_get_paintable(image: GtkWidget): Option<GdkTexture>;
+
+// SVG pictures (GTK 4.22's GtkSvg; src/c/svg.c).
+
+/**
+ * An SVG from `bytes`, drawn with system fonts only (no other files or URLs,
+ * no animations, no GTK extensions: set before the bytes are read); `None`
+ * when GTK reports a syntax error. Drop it with `gtk_svg_unref`.
+ */
+public extern fun lgtk_svg_load(bytes: GBytes): Option<GtkSvg>;
+public extern "g_object_unref" fun gtk_svg_unref(svg: GtkSvg);
+/** What the SVG may use (`GtkSvgFeatures`: 1 animations, 2 system resources, 4 external resources, 8 extensions). */
+public extern fun gtk_svg_get_features(svg: GtkSvg): i32;
+/** The size the SVG says it is (`gdk_paintable_get_intrinsic_width`/`height`); 0 when it says none. */
+public extern "gdk_paintable_get_intrinsic_width" fun gtk_svg_get_intrinsic_width(svg: GtkSvg): i32;
+public extern "gdk_paintable_get_intrinsic_height" fun gtk_svg_get_intrinsic_height(
+    svg: GtkSvg,
+): i32;
+/** Shows `svg` in a picture (`gtk_picture_set_paintable`), taking its own reference. */
+public extern "gtk_picture_set_paintable" fun gtk_picture_set_svg(
+    picture: GtkWidget,
+    svg: Option<GtkSvg>,
+);
+/** Shows `svg` in an image (`gtk_image_set_from_paintable`), taking its own reference. */
+public extern "gtk_image_set_from_paintable" fun gtk_image_set_from_svg(
+    image: GtkWidget,
+    svg: Option<GtkSvg>,
+);
+/** What a picture or an image shows, when it's an SVG (GTK keeps it: don't unref). */
+public extern fun lgtk_picture_get_svg(picture: GtkWidget): Option<GtkSvg>;
+public extern fun lgtk_image_get_svg(image: GtkWidget): Option<GtkSvg>;
 
 // GtkFlowBox: children laid side by side, wrapping onto new lines. Each child
 // sits in a GtkFlowBoxChild the box makes; both are GtkWidgets here.

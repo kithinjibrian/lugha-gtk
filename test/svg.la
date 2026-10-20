@@ -1,0 +1,85 @@
+// SVG pictures: an SVG loads with system fonts only, has the size it says, a
+// broken one is refused, and a picture and an image show one. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    g_bytes_new,
+    g_bytes_unref,
+    gtk_image_new_from_icon_name,
+    gtk_image_set_from_svg,
+    gtk_picture_new,
+    gtk_picture_set_svg,
+    gtk_svg_get_features,
+    gtk_svg_get_intrinsic_height,
+    gtk_svg_get_intrinsic_width,
+    gtk_svg_unref,
+    lgtk_image_get_svg,
+    lgtk_picture_get_svg,
+    lgtk_svg_load,
+    run,
+};
+
+fun load(text: string): string {
+    let bytes = text.to_bytes();
+    let block = g_bytes_new(bytes, bytes.len as u64);
+    let svg = lgtk_svg_load(block);
+    g_bytes_unref(block);
+    match svg {
+        Some(s) => {
+            let out = "{gtk_svg_get_intrinsic_width(s)}x{gtk_svg_get_intrinsic_height(s)} features {gtk_svg_get_features(s)}";
+            gtk_svg_unref(s);
+            out
+        }
+        None => "refused",
+    }
+}
+
+@test
+fun svgs_load_safely_and_show() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.svg", fun(a: Application) {
+        let mut out: string[] = [];
+        out.push(
+            load(
+                "<svg xmlns='http://www.w3.org/2000/svg' width='48' height='32'><rect width='48' height='32'/></svg>",
+            ),
+        );
+        out.push(load("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'/>"));
+        out.push(load("<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect"));
+        // An unknown element is reported but doesn't stop it.
+        out.push(
+            load("<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><blink/></svg>"),
+        );
+        let bytes = "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'/>".to_bytes();
+        let block = g_bytes_new(bytes, bytes.len as u64);
+        let picture = gtk_picture_new();
+        let image = gtk_image_new_from_icon_name("");
+        match lgtk_svg_load(block) {
+            Some(s) => {
+                gtk_picture_set_svg(picture, Some(s));
+                gtk_image_set_from_svg(image, Some(s));
+                gtk_svg_unref(s);
+            }
+            None => {}
+        }
+        g_bytes_unref(block);
+        out.push(
+            "picture {lgtk_picture_get_svg(picture).is_some()} image {lgtk_image_get_svg(image).is_some()}",
+        );
+        gtk_picture_set_svg(picture, None);
+        out.push("cleared {lgtk_picture_get_svg(picture).is_some()}");
+        seen.set(out);
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "48x32 features 2",
+        "24x24 features 2",
+        "refused",
+        "10x10 features 2",
+        "picture true image true",
+        "cleared false",
+    ]);
+}
