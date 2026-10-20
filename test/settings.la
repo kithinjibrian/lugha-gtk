@@ -1,7 +1,15 @@
 // The colour scheme GTK's widgets and `prefers-color-scheme` follow: set to
 // dark or light, read back, and reset to the system's own. Needs a display.
 import std.env;
-import gtk { Application, lgtk_color_scheme, lgtk_reset_color_scheme, lgtk_set_color_scheme, run };
+import gtk {
+    Application,
+    lgtk_color_scheme,
+    lgtk_css_provider_color_scheme,
+    lgtk_css_provider_new_for_scheme,
+    lgtk_reset_color_scheme,
+    lgtk_set_color_scheme,
+    run,
+};
 
 @test
 fun the_color_scheme_is_set_and_read_back() {
@@ -25,6 +33,33 @@ fun the_color_scheme_is_set_and_read_back() {
         note(lgtk_color_scheme());
         lgtk_reset_color_scheme();
         note(if lgtk_color_scheme() == own { 0 } else { -1 });
+        a.quit();
+    });
+    assert_eq(seen.get(), [2, 3, 0]);
+}
+
+@test
+fun a_provider_for_the_scheme_follows_it() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<i32[]> = Ref.new([]);
+    run("org.lugha.test.provider_scheme", fun(a: Application) {
+        let note = fun(n: i32) {
+            seen.update(fun(xs) {
+                let mut ys = xs;
+                ys.push(n);
+                ys
+            });
+        };
+        // An app's own provider stays "default" unless it follows the setting.
+        let provider = lgtk_css_provider_new_for_scheme();
+        lgtk_set_color_scheme(2);
+        note(lgtk_css_provider_color_scheme(provider));
+        lgtk_set_color_scheme(3);
+        note(lgtk_css_provider_color_scheme(provider));
+        lgtk_reset_color_scheme();
+        note(if lgtk_css_provider_color_scheme(provider) == lgtk_color_scheme() { 0 } else { -1 });
         a.quit();
     });
     assert_eq(seen.get(), [2, 3, 0]);

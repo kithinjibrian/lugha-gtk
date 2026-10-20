@@ -697,6 +697,10 @@ public extern fun lgtk_set_color_scheme(scheme: i32);
 public extern fun lgtk_reset_color_scheme();
 /** The current colour scheme (src/c/settings.c). */
 public extern fun lgtk_color_scheme(): i32;
+/** A CSS provider whose `prefers-color-scheme` follows the colour scheme, as GTK's theme does (src/c/settings.c); `gtk_css_provider_new`'s stays "default". */
+public extern fun lgtk_css_provider_new_for_scheme(): GtkCssProvider;
+/** The provider's `prefers-color-scheme` (src/c/settings.c; for tests). */
+public extern fun lgtk_css_provider_color_scheme(provider: GtkCssProvider): i32;
 /** Maximizes the window; before it's shown, it opens maximized. */
 public extern fun gtk_window_maximize(window: GtkWidget);
 public extern fun gtk_window_is_maximized(window: GtkWidget): i32;
