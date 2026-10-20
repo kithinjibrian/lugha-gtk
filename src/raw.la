@@ -63,6 +63,8 @@ public extern type GError;
 
 /** A `GMenu *`: a menu model, its items naming actions. */
 public extern type GMenu;
+/** One item of a `GMenu`, before it's appended. */
+public extern type GMenuItem;
 
 /** A `GSimpleAction *`: an action a menu item triggers. */
 public extern type GSimpleAction;
@@ -580,6 +582,18 @@ public extern fun gtk_overlay_remove_overlay(overlay: GtkWidget, widget: GtkWidg
 // gestures that open it.
 
 public extern fun g_menu_new(): GMenu;
+/** An item labelled `label` naming `detailed_action` (`gio/gmenu.h`). */
+public extern fun g_menu_item_new(
+    label: Option<string>,
+    detailed_action: Option<string>,
+): GMenuItem;
+/** Appends a copy of `item` to `menu`. */
+public extern fun g_menu_append_item(menu: GMenu, item: GMenuItem);
+public extern "g_object_unref" fun g_menu_item_unref(item: GMenuItem);
+/** Appends an item labelled `label` opening `submenu`. */
+public extern fun g_menu_append_submenu(menu: GMenu, label: Option<string>, submenu: GMenu);
+/** Sets a string attribute of `item` (`accel`, …) (src/c/menu.c: `g_menu_item_set_attribute` is variadic). */
+public extern fun lgtk_menu_item_set_string(item: GMenuItem, attribute: string, value: string);
 /** Adds an item showing `label` that triggers `detailed_action` (`"kv.item0"`). */
 public extern fun g_menu_append(
     menu: GMenu,
@@ -619,6 +633,9 @@ public extern fun gtk_widget_insert_action_group(
 );
 /** A popover menu showing `model` (it takes its own reference). */
 public extern fun gtk_popover_menu_new_from_model(model: Option<GMenu>): GtkWidget;
+/** As `gtk_popover_menu_new_from_model`, with `GtkPopoverMenuFlags` (1: submenus nested beside the menu). */
+public extern fun gtk_popover_menu_new_from_model_full(model: Option<GMenu>, flags: i32): GtkWidget;
+public extern fun gtk_popover_menu_get_flags(popover: GtkWidget): i32;
 public extern fun gtk_popover_menu_set_menu_model(popover: GtkWidget, model: Option<GMenu>);
 /** Where the popover points, in its parent's coordinates. */
 public extern fun gtk_popover_set_pointing_to(popover: GtkWidget, ptr rect: GdkRectangle);
@@ -635,6 +652,13 @@ public extern fun gtk_gesture_click_new(): GtkEventController;
 public extern fun gtk_gesture_long_press_new(): GtkEventController;
 /** Which mouse button the gesture listens to: 1 primary, 3 secondary, 0 any. */
 public extern fun gtk_gesture_single_set_button(gesture: GtkEventController, button: u32);
+/** When the controller sees events (`GtkPropagationPhase`: 0 none, 1 capture, 2 bubble, 3 target). */
+public extern fun gtk_event_controller_set_propagation_phase(
+    controller: GtkEventController,
+    phase: i32,
+);
+/** Claims (1) or denies (2) the gesture's current sequences (`GtkEventSequenceState`). */
+public extern fun gtk_gesture_set_state(gesture: GtkEventController, state: i32): i32;
 /** Connects a click gesture's `pressed`: the press count and where, in the widget. */
 public extern "g_signal_connect_data" fun connect_click(
     instance: GtkEventController,

@@ -1,0 +1,60 @@
+// Menu items with attributes, submenus, a nested popover menu, and a
+// gesture claiming its click in the capture phase. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    g_menu_append_item,
+    g_menu_append_section,
+    g_menu_append_submenu,
+    g_menu_item_new,
+    g_menu_item_unref,
+    g_menu_new,
+    g_menu_unref,
+    gtk_event_controller_set_propagation_phase,
+    gtk_gesture_click_new,
+    gtk_popover_menu_get_flags,
+    gtk_popover_menu_new_from_model_full,
+    lgtk_menu_item_set_string,
+    run,
+};
+
+@test
+fun a_nested_menu_with_a_hinted_item_and_a_submenu_is_built() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.menu_items", fun(a: Application) {
+        let note = fun(s: string) {
+            seen.update(fun(xs) {
+                let mut ys = xs;
+                ys.push(s);
+                ys
+            });
+        };
+        let menu = g_menu_new();
+        let section = g_menu_new();
+        let item = g_menu_item_new(Some("Profile"), Some("kv.item0"));
+        lgtk_menu_item_set_string(item, "accel", "<Control>p");
+        g_menu_append_item(section, item);
+        g_menu_item_unref(item);
+        let sub = g_menu_new();
+        let inner = g_menu_item_new(Some("Email"), Some("kv.item1"));
+        g_menu_append_item(sub, inner);
+        g_menu_item_unref(inner);
+        g_menu_append_submenu(section, Some("Invite"), sub);
+        g_menu_unref(sub);
+        g_menu_append_section(menu, Some("My Account"), section);
+        g_menu_unref(section);
+        // GTK_POPOVER_MENU_NESTED: submenus beside the menu.
+        let popover = gtk_popover_menu_new_from_model_full(Some(menu), 1);
+        g_menu_unref(menu);
+        note("nested {gtk_popover_menu_get_flags(popover)}");
+        let click = gtk_gesture_click_new();
+        // GTK_PHASE_CAPTURE.
+        gtk_event_controller_set_propagation_phase(click, 1);
+        note("phase set");
+        a.quit();
+    });
+    assert_eq(seen.get(), ["nested 1", "phase set"]);
+}
