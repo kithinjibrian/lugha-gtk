@@ -1,0 +1,29 @@
+// Whether a widget (and what's inside it) takes the pointer and keyboard
+// focus: set and read back. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_box_new,
+    gtk_widget_get_can_focus,
+    gtk_widget_get_can_target,
+    gtk_widget_set_can_focus,
+    gtk_widget_set_can_target,
+    run,
+};
+
+@test
+fun can_target_and_can_focus_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<i32[]> = Ref.new([]);
+    run("org.lugha.test.targeting", fun(a: Application) {
+        let w = gtk_box_new(1, 0);
+        let before = [gtk_widget_get_can_target(w), gtk_widget_get_can_focus(w)];
+        gtk_widget_set_can_target(w, 0);
+        gtk_widget_set_can_focus(w, 0);
+        seen.set(before + [gtk_widget_get_can_target(w), gtk_widget_get_can_focus(w)]);
+        a.quit();
+    });
+    assert_eq(seen.get(), [1, 1, 0, 0]);
+}

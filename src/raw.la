@@ -237,6 +237,12 @@ public extern fun gtk_widget_set_overflow(widget: GtkWidget, overflow: i32);
 public extern fun gtk_widget_get_overflow(widget: GtkWidget): i32;
 /** Whether the widget itself can take keyboard focus (`gboolean` as `i32`); its children are unaffected. */
 public extern fun gtk_widget_set_focusable(widget: GtkWidget, focusable: i32);
+/** Whether the widget, and what's inside it, takes pointer events (`gtkwidget.h`). */
+public extern fun gtk_widget_set_can_target(widget: GtkWidget, can_target: i32);
+public extern fun gtk_widget_get_can_target(widget: GtkWidget): i32;
+/** Whether the widget, or anything inside it, can take keyboard focus. */
+public extern fun gtk_widget_set_can_focus(widget: GtkWidget, can_focus: i32);
+public extern fun gtk_widget_get_can_focus(widget: GtkWidget): i32;
 public extern fun gtk_widget_get_focusable(widget: GtkWidget): i32;
 /** The widget's parent, `None` for one not in a container. */
 public extern fun gtk_widget_get_parent(widget: GtkWidget): Option<GtkWidget>;
