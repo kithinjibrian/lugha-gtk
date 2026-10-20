@@ -1,0 +1,44 @@
+// A switch: set and read back, and `notify::active` fires on each change.
+// Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GParamSpec,
+    GtkWidget,
+    connect_notify,
+    gtk_switch_get_active,
+    gtk_switch_new,
+    gtk_switch_set_active,
+    run,
+};
+
+@test
+fun a_switch_is_set_read_back_and_notifies() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.switch", fun(a: Application) {
+        let note = fun(s: string) {
+            seen.update(fun(xs) {
+                let mut ys = xs;
+                ys.push(s);
+                ys
+            });
+        };
+        let sw = gtk_switch_new();
+        note("off {gtk_switch_get_active(sw)}");
+        connect_notify(
+            sw,
+            "notify::active",
+            fun(w: GtkWidget, spec: Option<GParamSpec>) {
+                note("notified {gtk_switch_get_active(w)}");
+            },
+            0,
+        );
+        gtk_switch_set_active(sw, 1);
+        gtk_switch_set_active(sw, 0);
+        a.quit();
+    });
+    assert_eq(seen.get(), ["off 0", "notified 1", "notified 0"]);
+}

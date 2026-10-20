@@ -191,6 +191,10 @@ public extern fun gtk_check_button_set_child(check: GtkWidget, child: Option<Gtk
 public extern fun gtk_check_button_get_child(check: GtkWidget): Option<GtkWidget>;
 public extern fun gtk_check_button_get_active(check: GtkWidget): i32;
 public extern fun gtk_check_button_set_active(check: GtkWidget, active: i32);
+/** A switch: on or off, its thumb sliding between (`gtkswitch.h`). */
+public extern fun gtk_switch_new(): GtkWidget;
+public extern fun gtk_switch_set_active(switch: GtkWidget, is_active: i32);
+public extern fun gtk_switch_get_active(switch: GtkWidget): i32;
 public extern fun gtk_check_button_get_label(check: GtkWidget): Option<string>;
 public extern fun gtk_check_button_set_label(check: GtkWidget, label: string);
 
