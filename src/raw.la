@@ -142,6 +142,12 @@ public extern fun gtk_label_set_wrap_mode(label: GtkWidget, mode: i32);
 public extern fun gtk_label_get_wrap_mode(label: GtkWidget): i32;
 public extern fun gtk_label_set_ellipsize(label: GtkWidget, mode: i32);
 public extern fun gtk_label_get_ellipsize(label: GtkWidget): i32;
+/** Where the text sits in the label's width: 0 the start, 0.5 the middle (GTK's default), 1 the end; flipped right to left. */
+public extern fun gtk_label_set_xalign(label: GtkWidget, xalign: f32);
+public extern fun gtk_label_get_xalign(label: GtkWidget): f32;
+/** How wrapped lines line up (`GtkJustification`: 0 left, 1 right, 2 center, 3 fill). */
+public extern fun gtk_label_set_justify(label: GtkWidget, jtype: i32);
+public extern fun gtk_label_get_justify(label: GtkWidget): i32;
 /** With wrapping and ellipsizing both on, the most lines shown; -1 for no limit. */
 public extern fun gtk_label_set_lines(label: GtkWidget, lines: i32);
 public extern fun gtk_label_get_lines(label: GtkWidget): i32;

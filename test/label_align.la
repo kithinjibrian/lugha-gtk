@@ -1,0 +1,46 @@
+// Where a label's text sits in its width (xalign) and how its wrapped lines
+// line up (justify), each set and read back. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_label_get_justify,
+    gtk_label_get_xalign,
+    gtk_label_new,
+    gtk_label_set_justify,
+    gtk_label_set_xalign,
+    run,
+};
+
+@test
+fun a_labels_alignment_and_justification_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.label_align", fun(a: Application) {
+        let label = gtk_label_new("some text");
+        let note = fun(s: string) {
+            seen.update(fun(xs) {
+                let mut ys = xs;
+                ys.push(s);
+                ys
+            });
+        };
+        note(
+            "default {gtk_label_get_xalign(label) == (0.5 as f32)} {gtk_label_get_justify(label)}",
+        );
+        gtk_label_set_xalign(label, 0.0 as f32);
+        // GtkJustification: 0 left, 1 right, 2 center, 3 fill.
+        gtk_label_set_justify(label, 2);
+        note(
+            "start {gtk_label_get_xalign(label) == (0.0 as f32)} center {gtk_label_get_justify(label)}",
+        );
+        gtk_label_set_xalign(label, 1.0 as f32);
+        gtk_label_set_justify(label, 1);
+        note(
+            "end {gtk_label_get_xalign(label) == (1.0 as f32)} right {gtk_label_get_justify(label)}",
+        );
+        a.quit();
+    });
+    assert_eq(seen.get(), ["default true 0", "start true center 2", "end true right 1"]);
+}
