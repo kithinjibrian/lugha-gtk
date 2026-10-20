@@ -19,6 +19,7 @@ import gtk {
     gtk_range_set_value,
     gtk_scale_new_with_range,
     gtk_scale_set_digits,
+    gtk_scale_get_draw_value,
     gtk_scale_set_draw_value,
     gtk_string_list_append,
     gtk_string_list_get_n_items,
@@ -73,6 +74,9 @@ fun drop_downs_and_scales_read_back_and_signal() {
         let scale = gtk_scale_new_with_range(0, 0.0, 100.0, 1.0);
         gtk_scale_set_digits(scale, 0);
         gtk_scale_set_draw_value(scale, 1);
+        note("draws {gtk_scale_get_draw_value(scale)}");
+        gtk_scale_set_draw_value(scale, 0);
+        note("draws {gtk_scale_get_draw_value(scale)}");
         gtk_range_set_round_digits(scale, 0);
         gtk_range_set_increments(scale, 5.0, 10.0);
         connect_widget(
@@ -94,6 +98,8 @@ fun drop_downs_and_scales_read_back_and_signal() {
         "selected 0",
         "after model 0",
         "model 1 Some(\"Only\") None",
+        "draws 1",
+        "draws 0",
         "value 42",
         "value 30",
         "clamped 30",

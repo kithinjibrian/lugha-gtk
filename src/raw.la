@@ -508,6 +508,7 @@ public extern fun gtk_scale_new_with_range(
 public extern fun gtk_scale_set_digits(scale: GtkWidget, digits: i32);
 /** Whether the current value is drawn beside the handle (`gboolean` as `i32`). */
 public extern fun gtk_scale_set_draw_value(scale: GtkWidget, draw: i32);
+public extern fun gtk_scale_get_draw_value(scale: GtkWidget): i32;
 public extern fun gtk_range_set_value(range: GtkWidget, value: f64);
 public extern fun gtk_range_get_value(range: GtkWidget): f64;
 public extern fun gtk_range_set_range(range: GtkWidget, min: f64, max: f64);
