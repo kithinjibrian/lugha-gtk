@@ -1,0 +1,62 @@
+// Drop-downs in groups: positions count through every group, each position's
+// label and heading read back, and clearing the groups. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_drop_down_new,
+    gtk_drop_down_set_model,
+    gtk_string_list_append,
+    gtk_string_list_new,
+    gtk_string_list_unref,
+    lgtk_drop_down_clear_groups,
+    lgtk_drop_down_heading,
+    lgtk_drop_down_label,
+    lgtk_drop_down_set_groups,
+    lgtk_groups_add,
+    lgtk_groups_new,
+    lgtk_groups_unref,
+    run,
+};
+
+@test
+fun groups_count_through_and_keep_their_headings() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.groups", fun(a: Application) {
+        let fruits = gtk_string_list_new(None);
+        gtk_string_list_append(fruits, "Apple");
+        gtk_string_list_append(fruits, "Banana");
+        let vegetables = gtk_string_list_new(None);
+        gtk_string_list_append(vegetables, "Carrot");
+        let groups = lgtk_groups_new();
+        lgtk_groups_add(groups, "Fruits", fruits);
+        lgtk_groups_add(groups, "Vegetables", vegetables);
+        gtk_string_list_unref(fruits);
+        gtk_string_list_unref(vegetables);
+        let drop = gtk_drop_down_new(None, None);
+        lgtk_drop_down_set_groups(drop, groups);
+        lgtk_groups_unref(groups);
+        let mut out: string[] = [];
+        let mut i: u32 = 0;
+        while i < 4 {
+            out.push(
+                "{lgtk_drop_down_label(drop, i).unwrap_or("-")}/{lgtk_drop_down_heading(drop, i).unwrap_or("-")}",
+            );
+            i = i + 1;
+        }
+        // Back to a plain list: no headings.
+        lgtk_drop_down_clear_groups(drop);
+        let plain = gtk_string_list_new(None);
+        gtk_string_list_append(plain, "One");
+        gtk_drop_down_set_model(drop, Some(plain));
+        gtk_string_list_unref(plain);
+        out.push(
+            "{lgtk_drop_down_label(drop, 0).unwrap_or("-")}/{lgtk_drop_down_heading(drop, 0).unwrap_or("-")}",
+        );
+        seen.set(out);
+        a.quit();
+    });
+    assert_eq(seen.get(), ["Apple/Fruits", "Banana/Fruits", "Carrot/Vegetables", "-/-", "One/-"]);
+}

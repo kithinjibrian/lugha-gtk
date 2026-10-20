@@ -34,6 +34,9 @@ public extern type GVariant;
 /** A `GtkStringList *`: a list of strings, the model a drop-down shows. */
 public extern type GtkStringList;
 
+/** A drop-down's groups (`src/c/groups.c`: a `GListStore` of string lists, each with its heading). */
+public extern type GtkGroups;
+
 /** A `GtkExpression *` (drop-downs take `None` for plain string lists). */
 public extern type GtkExpression;
 
@@ -466,6 +469,23 @@ public extern fun gtk_drop_down_get_model(dropdown: GtkWidget): Option<GtkString
 public extern "g_list_model_get_n_items" fun gtk_string_list_get_n_items(list: GtkStringList): u32;
 /** The string at `position`, copied; `None` past the end. */
 public extern fun gtk_string_list_get_string(list: GtkStringList, position: u32): Option<string>;
+
+// Drop-downs in groups (src/c/groups.c): a list of string lists flattened,
+// with a header factory showing each group's heading.
+
+/** A new, empty set of groups; free it with `lgtk_groups_unref`. */
+public extern fun lgtk_groups_new(): GtkGroups;
+/** Adds `items` as the last group, under `heading` (`""`: none); the groups take their own reference. */
+public extern fun lgtk_groups_add(groups: GtkGroups, heading: string, items: GtkStringList);
+public extern "g_object_unref" fun lgtk_groups_unref(groups: GtkGroups);
+/** Shows `groups` in `dropdown` (positions count through every group), each under its heading, a line above every group but the first. */
+public extern fun lgtk_drop_down_set_groups(dropdown: GtkWidget, groups: GtkGroups);
+/** Takes the headings away; set a plain model after. */
+public extern fun lgtk_drop_down_clear_groups(dropdown: GtkWidget);
+/** The label of the choice at `position`, in a plain or grouped drop-down; `None` past the end. */
+public extern fun lgtk_drop_down_label(dropdown: GtkWidget, position: u32): Option<string>;
+/** The heading of the group holding `position`; `None` without groups or past the end. */
+public extern fun lgtk_drop_down_heading(dropdown: GtkWidget, position: u32): Option<string>;
 
 /** Connects a handler for a `notify::property` signal, which takes the object and the property's spec. */
 public extern "g_signal_connect_data" fun connect_notify(
