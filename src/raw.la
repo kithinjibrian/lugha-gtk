@@ -731,6 +731,15 @@ public extern fun gtk_popover_menu_set_menu_model(popover: GtkWidget, model: Opt
 /** Where the popover points, in its parent's coordinates. */
 public extern fun gtk_popover_set_pointing_to(popover: GtkWidget, ptr rect: GdkRectangle);
 public extern fun gtk_popover_set_has_arrow(popover: GtkWidget, has_arrow: i32);
+public extern fun gtk_popover_get_has_arrow(popover: GtkWidget): i32;
+/** A new, empty popover: parent it to a widget (`gtk_widget_set_parent`), give it a child, pop it up. */
+public extern fun gtk_popover_new(): GtkWidget;
+/** What the popover shows; `None` takes its child away. */
+public extern fun gtk_popover_set_child(popover: GtkWidget, child: Option<GtkWidget>);
+public extern fun gtk_popover_get_child(popover: GtkWidget): Option<GtkWidget>;
+/** The side of its parent it opens on (`GtkPositionType`: 0 left, 1 right, 2 top, 3 bottom); GTK flips it when there's no room. */
+public extern fun gtk_popover_set_position(popover: GtkWidget, position: i32);
+public extern fun gtk_popover_get_position(popover: GtkWidget): i32;
 public extern fun gtk_popover_popup(popover: GtkWidget);
 public extern fun gtk_popover_popdown(popover: GtkWidget);
 /** Makes `widget` a child of `parent` outside any container (a popover's parent). */

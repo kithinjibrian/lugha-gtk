@@ -1,0 +1,41 @@
+// A popover of any content: its child, its side and its arrow set and read
+// back, parented to a widget. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_box_new,
+    gtk_label_new,
+    gtk_popover_get_child,
+    gtk_popover_get_has_arrow,
+    gtk_popover_get_position,
+    gtk_popover_new,
+    gtk_popover_set_child,
+    gtk_popover_set_has_arrow,
+    gtk_popover_set_position,
+    gtk_widget_set_parent,
+    gtk_widget_unparent,
+    run,
+};
+
+@test
+fun a_popovers_child_side_and_arrow_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.popover", fun(a: Application) {
+        let anchor = gtk_box_new(0, 0);
+        let pop = gtk_popover_new();
+        gtk_widget_set_parent(pop, anchor);
+        let label = gtk_label_new("inside");
+        let before = "side {gtk_popover_get_position(pop)} arrow {gtk_popover_get_has_arrow(pop)} child {gtk_popover_get_child(pop).is_some()}";
+        gtk_popover_set_child(pop, Some(label));
+        gtk_popover_set_position(pop, 2);
+        gtk_popover_set_has_arrow(pop, 0);
+        let after = "side {gtk_popover_get_position(pop)} arrow {gtk_popover_get_has_arrow(pop)} child {gtk_popover_get_child(pop) == Some(label)}";
+        gtk_widget_unparent(pop);
+        seen.set([before, after]);
+        a.quit();
+    });
+    assert_eq(seen.get(), ["side 3 arrow 1 child false", "side 2 arrow 0 child true"]);
+}
