@@ -286,6 +286,17 @@ public extern fun gtk_separator_new(orientation: i32): GtkWidget;
 public extern fun gtk_scrolled_window_new(): GtkWidget;
 public extern fun gtk_scrolled_window_set_child(scrolled: GtkWidget, child: Option<GtkWidget>);
 public extern fun gtk_scrolled_window_get_child(scrolled: GtkWidget): Option<GtkWidget>;
+/** Whether the scrolled window asks for its child's natural height (and width): as big as its content until its parent can't give that. */
+public extern fun gtk_scrolled_window_set_propagate_natural_height(
+    scrolled: GtkWidget,
+    propagate: i32,
+);
+public extern fun gtk_scrolled_window_get_propagate_natural_height(scrolled: GtkWidget): i32;
+public extern fun gtk_scrolled_window_set_propagate_natural_width(
+    scrolled: GtkWidget,
+    propagate: i32,
+);
+public extern fun gtk_scrolled_window_get_propagate_natural_width(scrolled: GtkWidget): i32;
 
 // `g_signal_connect_data` once per handler shape: GTK calls every signal
 // handler with its object first and the user data last.

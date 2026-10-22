@@ -1,0 +1,37 @@
+// A scrolled window asking for its child's natural size: both
+// propagations set and read back. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_scrolled_window_get_propagate_natural_height,
+    gtk_scrolled_window_get_propagate_natural_width,
+    gtk_scrolled_window_new,
+    gtk_scrolled_window_set_propagate_natural_height,
+    gtk_scrolled_window_set_propagate_natural_width,
+    run,
+};
+
+@test
+fun natural_size_propagation_reads_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<i32[]> = Ref.new([]);
+    run("org.lugha.test.scrolled", fun(a: Application) {
+        let s = gtk_scrolled_window_new();
+        let before = [
+            gtk_scrolled_window_get_propagate_natural_height(s),
+            gtk_scrolled_window_get_propagate_natural_width(s),
+        ];
+        gtk_scrolled_window_set_propagate_natural_height(s, 1);
+        gtk_scrolled_window_set_propagate_natural_width(s, 1);
+        seen.set(
+            before + [
+                gtk_scrolled_window_get_propagate_natural_height(s),
+                gtk_scrolled_window_get_propagate_natural_width(s),
+            ],
+        );
+        a.quit();
+    });
+    assert_eq(seen.get(), [0, 0, 1, 1]);
+}
