@@ -1,0 +1,35 @@
+// Scrolling a widget into view: the helper finds the viewport around a
+// scrolled window's child, and says so when there's none. Where it scrolls
+// needs a window on screen: by hand. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_label_new,
+    gtk_scrolled_window_new,
+    gtk_scrolled_window_set_child,
+    lgtk_scroll_to,
+    run,
+};
+
+@test
+fun the_viewport_around_a_widget_is_found() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<i32[]> = Ref.new([]);
+    run("org.lugha.test.scroll_to", fun(a: Application) {
+        let scrolled = gtk_scrolled_window_new();
+        let list = gtk_box_new(1, 0);
+        let row = gtk_label_new("row");
+        gtk_box_append(list, row);
+        gtk_scrolled_window_set_child(scrolled, Some(list));
+        let loose = gtk_box_new(1, 0);
+        let other = gtk_label_new("other");
+        gtk_box_append(loose, other);
+        seen.set([lgtk_scroll_to(row), lgtk_scroll_to(other)]);
+        a.quit();
+    });
+    assert_eq(seen.get(), [1, 0]);
+}

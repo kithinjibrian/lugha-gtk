@@ -297,6 +297,11 @@ public extern fun gtk_scrolled_window_set_propagate_natural_width(
     propagate: i32,
 );
 public extern fun gtk_scrolled_window_get_propagate_natural_width(scrolled: GtkWidget): i32;
+/**
+ * Scrolls the nearest scrolled area around `widget` as little as it can to
+ * show it, at its next layout (src/c/scrolling.c); 0 when it's in none.
+ */
+public extern fun lgtk_scroll_to(widget: GtkWidget): i32;
 
 // `g_signal_connect_data` once per handler shape: GTK calls every signal
 // handler with its object first and the user data last.
