@@ -103,6 +103,26 @@ public extern type Argv;
 
 public extern fun gtk_application_new(id: string, flags: i32): GtkApplication;
 public extern fun g_application_run(app: GtkApplication, argc: i32, argv: Option<Argv>): i32;
+/** An argument vector of `n` empty slots for `g_application_run` (src/c/opening.c); `g_strfreev` it after. */
+public extern fun lgtk_argv_new(n: i32): Argv;
+public extern fun lgtk_argv_set(argv: Argv, i: i32, value: string);
+public extern fun g_strfreev(argv: Argv);
+/**
+ * With G_APPLICATION_HANDLES_OPEN (4): calls `handler` on every `open`, after
+ * keeping what was asked (src/c/opening.c). On the first launch, `open`
+ * comes instead of `activate`; a later launch's arrives here and that launch
+ * exits.
+ */
+public extern fun lgtk_application_on_open(
+    app: GtkApplication,
+    handler: fun(GtkApplication, data),
+    user: data,
+    destroy: release,
+);
+/** How many items the last `open` asked for. */
+public extern fun lgtk_application_opened_count(app: GtkApplication): i32;
+/** The last `open`'s item `i`: a local file's absolute path, or its URI as GIO normalises it (`rapidkoi://host` gains a trailing `/`). */
+public extern fun lgtk_application_opened(app: GtkApplication, i: i32): string;
 public extern fun g_application_quit(app: GtkApplication);
 /** Keeps the application running with no window open, until a matching `g_application_release`. */
 public extern fun g_application_hold(app: GtkApplication);

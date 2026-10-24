@@ -1,0 +1,64 @@
+// Opening from outside: an application with G_APPLICATION_HANDLES_OPEN (4)
+// run with an argument list gets `open` instead of `activate`, and the hook
+// hands over what was asked: a local file as its absolute path, anything else
+// as its URI, as GIO normalises it. Needs a display.
+import std.env;
+import gtk {
+    GtkApplication,
+    connect_app,
+    g_application_quit,
+    g_application_run,
+    g_object_unref,
+    g_strfreev,
+    gtk_application_new,
+    lgtk_application_on_open,
+    lgtk_application_opened,
+    lgtk_application_opened_count,
+    lgtk_argv_new,
+    lgtk_argv_set,
+};
+
+@test
+fun open_hands_over_paths_and_addresses() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let application = gtk_application_new("org.lugha.test.opening", 4);
+    connect_app(
+        application,
+        "activate",
+        fun(a: GtkApplication) {
+            seen.set(["activate"]);
+            g_application_quit(a);
+        },
+        0,
+    );
+    lgtk_application_on_open(application, fun(a: GtkApplication) {
+        let mut items: string[] = [];
+        let mut i: i32 = 0;
+        while i < lgtk_application_opened_count(a) {
+            items.push(lgtk_application_opened(a, i));
+            i = i + 1;
+        }
+        seen.set(items);
+        g_application_quit(a);
+    });
+    let args = ["prog", "/tmp/lugha-open-test.rkb", "rapidkoi://notes.dafifi.net", "relative.rkb"];
+    let argv = lgtk_argv_new(args.len as i32);
+    let mut i = 0;
+    while i < args.len {
+        lgtk_argv_set(argv, i as i32, args[i]);
+        i = i + 1;
+    }
+    let status = g_application_run(application, args.len as i32, Some(argv));
+    g_strfreev(argv);
+    g_object_unref(application);
+    assert_eq(status, 0);
+    assert_eq(seen.get(), [
+        "/tmp/lugha-open-test.rkb",
+        // GIO normalises a URI: a bare host gains a trailing slash.
+        "rapidkoi://notes.dafifi.net/",
+        env.current_dir().unwrap_or("?") + "/relative.rkb",
+    ]);
+}
