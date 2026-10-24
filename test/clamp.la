@@ -1,6 +1,7 @@
 // A clamp: one child, measured as the child is but kept within limits, never
 // below the child's own minimum; -1 is no limit; new limits re-measure; the
-// child goes when the clamp does. Needs a display.
+// child goes when the clamp does; given more room than its maximum, it
+// places its child by its alignment. Needs a display.
 import std.env;
 import gtk {
     Application,
@@ -11,11 +12,16 @@ import gtk {
     gtk_box_remove,
     gtk_label_new,
     gtk_label_set_wrap,
+    GrapheneRect,
+    gtk_widget_allocate,
+    gtk_widget_compute_bounds,
     gtk_widget_measure,
+    gtk_widget_set_direction,
     gtk_widget_set_size_request,
     gtk_window_set_child,
     lgtk_clamp_get_child,
     lgtk_clamp_new,
+    lgtk_clamp_set_align,
     lgtk_clamp_set_child,
     lgtk_clamp_set_limits,
     on_finalized,
@@ -95,5 +101,55 @@ fun a_clamp_keeps_its_childs_size_within_its_limits() {
         "wrapping: natural true, minimum true",
         "old child freed when replaced: true",
         "label freed",
+    ]);
+}
+
+@test
+fun a_clamp_places_its_child_by_its_alignment() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.clamp_align", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let holder = gtk_box_new(1, 0);
+        gtk_window_set_child(window, holder);
+        let child = gtk_box_new(0, 0);
+        gtk_widget_set_size_request(child, 50, 20);
+        let clamp = lgtk_clamp_new();
+        lgtk_clamp_set_child(clamp, Some(child));
+        gtk_box_append(holder, clamp);
+        lgtk_clamp_set_limits(clamp, -1, 100, -1, 20);
+        // GtkAlign: 0 fill, 1 start, 2 end, 3 center. The child's bounds in the clamp's 300 x 60.
+        let at = fun(halign: i32, valign: i32): string {
+            lgtk_clamp_set_align(clamp, halign, valign);
+            gtk_widget_allocate(clamp, 300, 60, -1, None);
+            let mut b = GrapheneRect { x: 0.0, y: 0.0, width: 0.0, height: 0.0 };
+            let ok = gtk_widget_compute_bounds(child, clamp, out b);
+            "{ok} at {b.x as i32},{b.y as i32} {b.width as i32}x{b.height as i32}"
+        };
+        note("fill {at(0, 0)}");
+        note("start {at(1, 1)}");
+        note("center {at(3, 3)}");
+        note("end {at(2, 2)}");
+        // Right to left, the start is the right.
+        gtk_widget_set_direction(clamp, 2);
+        note("start, right to left {at(1, 2)}");
+        gtk_box_remove(holder, clamp);
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "fill 1 at 0,0 100x20",
+        "start 1 at 0,0 100x20",
+        "center 1 at 100,20 100x20",
+        "end 1 at 200,40 100x20",
+        "start, right to left 1 at 200,40 100x20",
     ]);
 }

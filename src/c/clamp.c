@@ -2,8 +2,9 @@
  * A clamp: a widget with one child, measured as the child is but kept within
  * limits (a minimum and a maximum each way; -1 is no limit), and never below
  * the child's own minimum, since GTK can't draw a widget smaller than that.
- * Given more room than its maximum, it gives its child the maximum, at the
- * start. GTK has minimum sizes only (CSS min-width, size requests); this is
+ * Given more room than its maximum, it gives its child the maximum, placed
+ * by the clamp's alignment (`lgtk_clamp_set_align`; fill and start put it at
+ * the start, as before), as CSS's `max-width` with `margin: auto`. GTK has minimum sizes only (CSS min-width, size requests); this is
  * how kivuli gives a node an exact size or a maximum. The clamp parents its
  * child itself and unparents it in dispose.
  */
@@ -16,6 +17,7 @@ struct _LgtkClamp {
     GtkWidget parent_instance;
     GtkWidget *child;
     int min_width, max_width, min_height, max_height;
+    GtkAlign halign, valign;
 };
 
 G_DEFINE_FINAL_TYPE(LgtkClamp, lgtk_clamp, GTK_TYPE_WIDGET)
@@ -68,6 +70,23 @@ static GtkSizeRequestMode lgtk_clamp_get_request_mode(GtkWidget *widget)
                                : GTK_SIZE_REQUEST_CONSTANT_SIZE;
 }
 
+/* Where a child `size` long starts in `room` placed by `align`; `flip` is
+ * right to left, where the start is the far side. */
+static int place(int room, int size, GtkAlign align, gboolean flip)
+{
+    int spare = room - size;
+    if (spare <= 0)
+        return 0;
+    switch (align) {
+    case GTK_ALIGN_CENTER:
+        return spare / 2;
+    case GTK_ALIGN_END:
+        return flip ? 0 : spare;
+    default:
+        return flip ? spare : 0;
+    }
+}
+
 static void lgtk_clamp_size_allocate(GtkWidget *widget, int width, int height, int baseline)
 {
     LgtkClamp *self = LGTK_CLAMP(widget);
@@ -82,7 +101,13 @@ static void lgtk_clamp_size_allocate(GtkWidget *widget, int width, int height, i
         gtk_widget_measure(self->child, GTK_ORIENTATION_VERTICAL, w, &child_min, &child_nat, NULL, NULL);
         h = MAX(self->max_height, child_min);
     }
-    gtk_widget_allocate(self->child, w, h, -1, NULL);
+    gboolean rtl = gtk_widget_get_direction(widget) == GTK_TEXT_DIR_RTL;
+    int x = place(width, w, self->halign, rtl);
+    int y = place(height, h, self->valign, FALSE);
+    GskTransform *at = NULL;
+    if (x != 0 || y != 0)
+        at = gsk_transform_translate(NULL, &GRAPHENE_POINT_INIT(x, y));
+    gtk_widget_allocate(self->child, w, h, -1, at);
 }
 
 static void lgtk_clamp_dispose(GObject *object)
@@ -106,6 +131,7 @@ static void lgtk_clamp_init(LgtkClamp *self)
 {
     self->child = NULL;
     self->min_width = self->max_width = self->min_height = self->max_height = -1;
+    self->halign = self->valign = GTK_ALIGN_FILL;
 }
 
 GtkWidget *lgtk_clamp_new(void)
@@ -141,4 +167,14 @@ void lgtk_clamp_set_limits(GtkWidget *clamp, int min_width, int max_width, int m
     self->min_height = min_height;
     self->max_height = max_height;
     gtk_widget_queue_resize(clamp);
+}
+
+/* Where the child goes when the clamp has more room than it: GtkAlign each
+ * way (fill and start: the start; right to left, start is the right). */
+void lgtk_clamp_set_align(GtkWidget *clamp, GtkAlign halign, GtkAlign valign)
+{
+    LgtkClamp *self = LGTK_CLAMP(clamp);
+    self->halign = halign;
+    self->valign = valign;
+    gtk_widget_queue_allocate(clamp);
 }

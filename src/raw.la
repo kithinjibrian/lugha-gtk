@@ -95,6 +95,14 @@ public extern struct GdkRectangle {
     public height: i32,
 }
 
+/** A `graphene_rect_t`: a widget's bounds (its `origin` point and `size` flattened, four floats as C lays them out). */
+public extern struct GrapheneRect {
+    public x: f32,
+    public y: f32,
+    public width: f32,
+    public height: f32,
+}
+
 /** A `GFile *`: a file's location, such as the one a picture shows. */
 public extern type GFile;
 
@@ -502,6 +510,14 @@ public extern fun gtk_root_get_focus(window: GtkWidget): Option<GtkWidget>;
  * are picked.
  */
 public extern fun gtk_widget_pick(widget: GtkWidget, x: f64, y: f64, flags: i32): Option<GtkWidget>;
+/** `widget`'s bounds in `target`'s coordinates; `gboolean` as `i32`, 0 when they share no ancestor. Works on allocated widgets not yet shown. */
+public extern fun gtk_widget_compute_bounds(
+    widget: GtkWidget,
+    target: GtkWidget,
+    out bounds: GrapheneRect,
+): i32;
+/** Sets `widget`'s text direction: `GtkTextDirection` (0 none: the default's, 1 left to right, 2 right to left). */
+public extern fun gtk_widget_set_direction(widget: GtkWidget, dir: i32);
 /** Gives `focus` the window's keyboard focus; `None` leaves nothing focused. */
 public extern fun gtk_window_set_focus(window: GtkWidget, focus: Option<GtkWidget>);
 /** Whether `window` is the active one (in front, with the desktop's keyboard focus); `gboolean` as `i32`. Notified as `notify::is-active`. */
@@ -897,7 +913,7 @@ public extern fun lgtk_clamp_new(): GtkWidget;
 /** Replaces the clamp's child (the old one is unparented); `None` empties it. */
 public extern fun lgtk_clamp_set_child(clamp: GtkWidget, child: Option<GtkWidget>);
 public extern fun lgtk_clamp_get_child(clamp: GtkWidget): Option<GtkWidget>;
-/** The clamp's limits in pixels, each way; -1 is no limit. Given more than its maximum, the child gets the maximum, at the start. */
+/** The clamp's limits in pixels, each way; -1 is no limit. Given more than its maximum, the child gets the maximum, placed by `lgtk_clamp_set_align`. */
 public extern fun lgtk_clamp_set_limits(
     clamp: GtkWidget,
     min_width: i32,
@@ -905,6 +921,8 @@ public extern fun lgtk_clamp_set_limits(
     min_height: i32,
     max_height: i32,
 );
+/** Where the clamp puts its child when it has more room than the child gets: `GtkAlign` each way (0 fill, 1 start, 2 end, 3 center; fill and start are the start, the right when right to left). */
+public extern fun lgtk_clamp_set_align(clamp: GtkWidget, halign: i32, valign: i32);
 
 // App-wide styles, maximized windows and header bars.
 
