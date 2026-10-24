@@ -58,6 +58,9 @@ public extern type GtkCssProvider;
 /** A `GdkDisplay *`: the screen a window is on; app-wide styles are added per display. */
 public extern type GdkDisplay;
 
+/** A `GdkClipboard *`: a display's clipboard. */
+public extern type GdkClipboard;
+
 /** A `GBytes *`: an immutable block of bytes GLib owns. */
 public extern type GBytes;
 
@@ -897,6 +900,12 @@ public extern fun gtk_style_context_add_provider_for_display(
     priority: u32,
 );
 public extern fun gtk_widget_get_display(widget: GtkWidget): GdkDisplay;
+/** The display's clipboard (Ctrl+C, Ctrl+V). */
+public extern fun gdk_display_get_clipboard(display: GdkDisplay): GdkClipboard;
+/** Puts `text` on the clipboard, for this program to offer until something else is copied. */
+public extern fun gdk_clipboard_set_text(clipboard: GdkClipboard, text: string);
+/** The text this program put on the clipboard (src/c/clipboard.c), to `g_free`; `None` when it holds another program's. */
+public extern fun lgtk_clipboard_local_text(clipboard: GdkClipboard): Option<OwnedText>;
 /** Removes the widget's CSS classes that start with `prefix` (src/c/look.c). */
 public extern fun lgtk_remove_css_classes_with_prefix(widget: GtkWidget, prefix: string);
 /** The widget's text colour as 0xRRGGBBAA (src/c/look.c; for tests). */

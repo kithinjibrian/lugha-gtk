@@ -1,0 +1,41 @@
+// The clipboard: text set on a display's clipboard reads back, and a second
+// text replaces the first. GTK keeps an app's own text in the process, so no
+// other program is needed. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    g_free,
+    gdk_clipboard_set_text,
+    gdk_display_get_clipboard,
+    gtk_application_window_new,
+    gtk_widget_get_display,
+    lgtk_clipboard_local_text,
+    lgtk_cstring_text,
+    run,
+};
+
+@test
+fun text_set_on_the_clipboard_reads_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.clipboard", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let clipboard = gdk_display_get_clipboard(gtk_widget_get_display(window));
+        let read = fun(): string = match lgtk_clipboard_local_text(clipboard) {
+            Some(owned) => {
+                let text = lgtk_cstring_text(owned);
+                g_free(owned);
+                text
+            }
+            None => "(none of ours)",
+        };
+        gdk_clipboard_set_text(clipboard, "https://counter.dafifi.net/@0.3.0?count=3");
+        let first = read();
+        gdk_clipboard_set_text(clipboard, "second");
+        seen.set([first, read()]);
+        a.quit();
+    });
+    assert_eq(seen.get(), ["https://counter.dafifi.net/@0.3.0?count=3", "second"]);
+}
