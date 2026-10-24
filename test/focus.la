@@ -10,6 +10,7 @@ import gtk {
     gtk_root_get_focus,
     gtk_widget_is_ancestor,
     gtk_widget_pick,
+    gtk_window_is_active,
     gtk_window_set_child,
     gtk_window_set_focus,
     run,
@@ -68,4 +69,23 @@ fun picking_in_a_window_not_on_screen_finds_nothing() {
         a.quit();
     });
     assert_eq(seen.get(), ["found false"]);
+}
+
+@test
+fun a_window_never_shown_is_not_active() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.active", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let active = gtk_window_is_active(window);
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push("active {active}");
+            ys
+        });
+        a.quit();
+    });
+    assert_eq(seen.get(), ["active 0"]);
 }
