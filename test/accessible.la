@@ -1,0 +1,69 @@
+// Accessibility: a widget's role set before anything reads it, its checked
+// and selected states and its label set, reset and read back through GTK's
+// test functions (no screen reader needed). Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_accessible_get_accessible_role,
+    gtk_accessible_reset_property,
+    gtk_accessible_reset_state,
+    gtk_box_new,
+    gtk_button_new_with_label,
+    gtk_test_accessible_has_property,
+    gtk_test_accessible_has_state,
+    lgtk_accessible_label_is,
+    lgtk_accessible_set_checked,
+    lgtk_accessible_set_label,
+    lgtk_accessible_set_role,
+    lgtk_accessible_set_selected,
+    lgtk_accessible_state_is,
+    run,
+};
+
+@test
+fun roles_states_and_labels_set_reset_and_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.accessible", fun(a: Application) {
+        let button = gtk_button_new_with_label("Buy milk");
+        note("a button's own role {gtk_accessible_get_accessible_role(button)}");
+        // GTK_ACCESSIBLE_ROLE_CHECKBOX
+        lgtk_accessible_set_role(button, 6);
+        note("made a checkbox {gtk_accessible_get_accessible_role(button)}");
+        // GTK_ACCESSIBLE_STATE_CHECKED (1), SELECTED (7); PROPERTY_LABEL (4)
+        lgtk_accessible_set_checked(button, 1);
+        lgtk_accessible_set_label(button, "Buy milk");
+        note(
+            "checked {lgtk_accessible_state_is(button, 1, 1)} not unchecked {lgtk_accessible_state_is(button, 1, 0) == 0} label {lgtk_accessible_label_is(button, "Buy milk")}",
+        );
+        gtk_accessible_reset_state(button, 1);
+        gtk_accessible_reset_property(button, 4);
+        note(
+            "reset: checked set {gtk_test_accessible_has_state(button, 1)} label set {gtk_test_accessible_has_property(button, 4)}",
+        );
+        let item = gtk_box_new(1, 0);
+        // GTK_ACCESSIBLE_ROLE_LIST_ITEM
+        lgtk_accessible_set_role(item, 28);
+        lgtk_accessible_set_selected(item, 1);
+        note(
+            "list item {gtk_accessible_get_accessible_role(item)} selected {lgtk_accessible_state_is(item, 7, 1)}",
+        );
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "a button's own role 3",
+        "made a checkbox 6",
+        "checked 1 not unchecked true label 1",
+        "reset: checked set 0 label set 0",
+        "list item 28 selected 1",
+    ]);
+}

@@ -1,8 +1,8 @@
 [package]
 name = "gtk"
-version = "0.1.50"
+version = "0.1.51"
 source = "src"
 
 [link]
 pkg-config = ["gtk4"]
-c = ["src/c/signals.c", "src/c/text.c", "src/c/look.c", "src/c/clamp.c", "src/c/settings.c", "src/c/menu.c", "src/c/groups.c", "src/c/svg.c", "src/c/scrolling.c", "src/c/clip.c"]
+c = ["src/c/signals.c", "src/c/text.c", "src/c/look.c", "src/c/clamp.c", "src/c/settings.c", "src/c/menu.c", "src/c/groups.c", "src/c/svg.c", "src/c/scrolling.c", "src/c/clip.c", "src/c/accessible.c"]

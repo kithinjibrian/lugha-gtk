@@ -828,6 +828,27 @@ public extern fun gtk_widget_measure(
     out minimum_baseline: i32,
     out natural_baseline: i32,
 );
+/**
+ * Accessibility (src/c/accessible.c for the variadic calls). Roles are
+ * `GtkAccessibleRole` values (3 button, 6 checkbox, 15 generic, 18 group, 19
+ * heading, 22 label, 26 list, 28 list item, 58 separator, 63 switch, 64 tab,
+ * 66 tab list); states `GtkAccessibleState` (1 checked, 7 selected); the label
+ * property is 4. A role is set when the widget is made: GTK refuses once an
+ * assistive technology has read it.
+ */
+public extern fun lgtk_accessible_set_role(widget: GtkWidget, role: i32);
+public extern fun gtk_accessible_get_accessible_role(widget: GtkWidget): i32;
+public extern fun lgtk_accessible_set_label(widget: GtkWidget, label: string);
+public extern fun lgtk_accessible_set_checked(widget: GtkWidget, on: i32);
+public extern fun lgtk_accessible_set_selected(widget: GtkWidget, on: i32);
+/** Back to unset: a state (`GtkAccessibleState`) or a property (`GtkAccessibleProperty`). */
+public extern fun gtk_accessible_reset_state(widget: GtkWidget, state: i32);
+public extern fun gtk_accessible_reset_property(widget: GtkWidget, property: i32);
+/** For tests: whether a state or property is set at all, and whether it has a value. */
+public extern fun gtk_test_accessible_has_state(widget: GtkWidget, state: i32): i32;
+public extern fun gtk_test_accessible_has_property(widget: GtkWidget, property: i32): i32;
+public extern fun lgtk_accessible_state_is(widget: GtkWidget, state: i32, value: i32): i32;
+public extern fun lgtk_accessible_label_is(widget: GtkWidget, label: string): i32;
 /** Gives `widget` its size (after `gtk_widget_measure`), placed by `transform`; containers call it for their children. */
 public extern fun gtk_widget_allocate(
     widget: GtkWidget,
