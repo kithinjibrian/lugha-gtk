@@ -8,6 +8,8 @@ import gtk {
     gtk_scrolled_window_new,
     gtk_scrolled_window_set_propagate_natural_height,
     gtk_scrolled_window_set_propagate_natural_width,
+    gtk_scrolled_window_set_policy,
+    lgtk_scrolled_window_policy,
     run,
 };
 
@@ -34,4 +36,22 @@ fun natural_size_propagation_reads_back() {
         a.quit();
     });
     assert_eq(seen.get(), [0, 0, 1, 1]);
+}
+
+@test
+fun scrollbar_policies_set_and_read_back() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<i32[]> = Ref.new([]);
+    run("org.lugha.test.policy", fun(a: Application) {
+        let s = gtk_scrolled_window_new();
+        // GTK's default: automatic (1) both ways.
+        let before = [lgtk_scrolled_window_policy(s, 1), lgtk_scrolled_window_policy(s, 0)];
+        // Never (2) across, automatic down.
+        gtk_scrolled_window_set_policy(s, 2, 1);
+        seen.set(before + [lgtk_scrolled_window_policy(s, 1), lgtk_scrolled_window_policy(s, 0)]);
+        a.quit();
+    });
+    assert_eq(seen.get(), [1, 1, 2, 1]);
 }

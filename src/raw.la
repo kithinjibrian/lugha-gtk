@@ -297,6 +297,14 @@ public extern fun gtk_scrolled_window_set_propagate_natural_width(
     propagate: i32,
 );
 public extern fun gtk_scrolled_window_get_propagate_natural_width(scrolled: GtkWidget): i32;
+/** The scrollbars' policies, `GtkPolicyType`: 0 always, 1 automatic, 2 never, 3 external. */
+public extern fun gtk_scrolled_window_set_policy(
+    scrolled: GtkWidget,
+    horizontal: i32,
+    vertical: i32,
+);
+/** The policy across (`horizontal` 1) or down (0), as `gtk_scrolled_window_set_policy` takes it (src/c/scrolling.c). */
+public extern fun lgtk_scrolled_window_policy(scrolled: GtkWidget, horizontal: i32): i32;
 /**
  * Scrolls the nearest scrolled area around `widget` as little as it can to
  * show it, at its next layout (src/c/scrolling.c); 0 when it's in none.

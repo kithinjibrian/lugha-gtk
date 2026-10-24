@@ -17,3 +17,13 @@ gboolean lgtk_scroll_to(GtkWidget *widget)
     gtk_viewport_scroll_to(GTK_VIEWPORT(p), widget, NULL);
     return TRUE;
 }
+
+/* A scrolled window's scrollbar policy (GtkPolicyType) across (`horizontal`
+ * TRUE) or down: gtk_scrolled_window_get_policy returns both through
+ * pointers, which Lugha can't pass. */
+int lgtk_scrolled_window_policy(GtkWidget *scrolled, gboolean horizontal)
+{
+    GtkPolicyType h, v;
+    gtk_scrolled_window_get_policy(GTK_SCROLLED_WINDOW(scrolled), &h, &v);
+    return horizontal ? (int)h : (int)v;
+}
