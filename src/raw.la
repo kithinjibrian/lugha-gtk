@@ -462,6 +462,12 @@ public extern fun gtk_widget_is_ancestor(widget: GtkWidget, ancestor: GtkWidget)
 
 /** The widget with keyboard focus in `window`, if any; a text field's focus sits on a widget inside it. */
 public extern fun gtk_root_get_focus(window: GtkWidget): Option<GtkWidget>;
+/**
+ * The deepest widget inside `widget` at `(x, y)`, in `widget`'s coordinates,
+ * if any; `flags` is `GtkPickFlags` (0: GTK_PICK_DEFAULT). Only mapped widgets
+ * are picked.
+ */
+public extern fun gtk_widget_pick(widget: GtkWidget, x: f64, y: f64, flags: i32): Option<GtkWidget>;
 /** Gives `focus` the window's keyboard focus; `None` leaves nothing focused. */
 public extern fun gtk_window_set_focus(window: GtkWidget, focus: Option<GtkWidget>);
 

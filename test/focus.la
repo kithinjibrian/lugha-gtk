@@ -9,6 +9,7 @@ import gtk {
     gtk_entry_new,
     gtk_root_get_focus,
     gtk_widget_is_ancestor,
+    gtk_widget_pick,
     gtk_window_set_child,
     gtk_window_set_focus,
     run,
@@ -45,4 +46,26 @@ fun a_windows_focus_is_set_and_cleared() {
         a.quit();
     });
     assert_eq(seen.get(), ["set: in the entry true", "cleared: true"]);
+}
+
+@test
+fun picking_in_a_window_not_on_screen_finds_nothing() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.pick", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let entry = gtk_entry_new();
+        gtk_window_set_child(window, entry);
+        // GTK picks only mapped widgets: a window never shown has none.
+        let found = gtk_widget_pick(window, 1.0, 1.0, 0).is_some();
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push("found {found}");
+            ys
+        });
+        a.quit();
+    });
+    assert_eq(seen.get(), ["found false"]);
 }
