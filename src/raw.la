@@ -31,6 +31,9 @@ public extern type GtkShortcutAction;
 /** A `GVariant *`: arguments GTK may hand a shortcut's callback. */
 public extern type GVariant;
 
+/** A `GskTransform *`: where a child is placed; `None` is where its parent's origin is. */
+public extern type GskTransform;
+
 /** A `GtkStringList *`: a list of strings, the model a drop-down shows. */
 public extern type GtkStringList;
 
@@ -825,6 +828,26 @@ public extern fun gtk_widget_measure(
     out minimum_baseline: i32,
     out natural_baseline: i32,
 );
+/** Gives `widget` its size (after `gtk_widget_measure`), placed by `transform`; containers call it for their children. */
+public extern fun gtk_widget_allocate(
+    widget: GtkWidget,
+    width: i32,
+    height: i32,
+    baseline: i32,
+    transform: Option<GskTransform>,
+);
+/**
+ * A clip: one child, asking for no minimum size so it never pushes its parent;
+ * the child gets at least its own minimum, at the top start, and what sticks
+ * out is cut off (src/c/clip.c). `overflow-changed` (connect with
+ * `connect_widget`) fires from an idle when the overflow changes.
+ */
+public extern fun lgtk_clip_new(): GtkWidget;
+/** Replaces the clip's child (the old one is unparented); `None` empties it. */
+public extern fun lgtk_clip_set_child(clip: GtkWidget, child: Option<GtkWidget>);
+public extern fun lgtk_clip_get_child(clip: GtkWidget): Option<GtkWidget>;
+/** How far the child stuck out at the last allocation, in pixels: across (`horizontal` 1, at the end side) or down (0, at the bottom). */
+public extern fun lgtk_clip_overflow(clip: GtkWidget, horizontal: i32): i32;
 /** A clamp: one child, sized as the child is but kept within limits, never below the child's minimum. */
 public extern fun lgtk_clamp_new(): GtkWidget;
 /** Replaces the clamp's child (the old one is unparented); `None` empties it. */

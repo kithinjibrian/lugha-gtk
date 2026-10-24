@@ -1,0 +1,102 @@
+// A clip: one child, asking for no minimum size, so it never pushes its
+// parent; the child gets at least its own minimum, at the top start, and what
+// sticks out is cut off and measured; `overflow-changed` fires from an idle
+// once the overflow changes. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GtkWidget,
+    connect_widget,
+    gtk_application_window_new,
+    g_timeout_add_full,
+    gtk_widget_allocate,
+    gtk_widget_get_overflow,
+    gtk_widget_measure,
+    gtk_widget_set_size_request,
+    gtk_window_set_child,
+    lgtk_clip_get_child,
+    lgtk_clip_new,
+    lgtk_clip_overflow,
+    lgtk_clip_set_child,
+    gtk_label_new,
+    run,
+};
+
+/** The widget's minimum and natural size one way (0 across, 1 down). */
+fun measured(w: GtkWidget, orientation: i32): (i32, i32) {
+    let mut minimum: i32 = 0;
+    let mut natural: i32 = 0;
+    let mut minimum_baseline: i32 = 0;
+    let mut natural_baseline: i32 = 0;
+    gtk_widget_measure(
+        w,
+        orientation,
+        -1,
+        out minimum,
+        out natural,
+        out minimum_baseline,
+        out natural_baseline,
+    );
+    (minimum, natural)
+}
+
+@test
+fun a_clip_asks_for_nothing_and_measures_what_sticks_out() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.clip", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let clip = lgtk_clip_new();
+        gtk_window_set_child(window, clip);
+        let child = gtk_label_new("x");
+        gtk_widget_set_size_request(child, 200, 100);
+        lgtk_clip_set_child(clip, Some(child));
+        note(
+            "child kept {lgtk_clip_get_child(clip).is_some()} hidden overflow {gtk_widget_get_overflow(clip)}",
+        );
+        let (min_w, nat_w) = measured(clip, 0);
+        let (min_h, nat_h) = measured(clip, 1);
+        note("asks min {min_w}x{min_h} natural {nat_w}x{nat_h}");
+        let changes = Ref.new(0);
+        connect_widget(
+            clip,
+            "overflow-changed",
+            fun(w: GtkWidget) {
+                changes.update(fun(n) = n + 1);
+            },
+            0,
+        );
+        gtk_widget_allocate(clip, 120, 300, -1, None);
+        note("120x300: across {lgtk_clip_overflow(clip, 1)} down {lgtk_clip_overflow(clip, 0)}");
+        gtk_widget_allocate(clip, 50, 40, -1, None);
+        note("50x40: across {lgtk_clip_overflow(clip, 1)} down {lgtk_clip_overflow(clip, 0)}");
+        gtk_widget_allocate(clip, 300, 300, -1, None);
+        note("300x300: across {lgtk_clip_overflow(clip, 1)} down {lgtk_clip_overflow(clip, 0)}");
+        // The signal waits for an idle: none yet, inside this handler.
+        note("signals so far {changes.get()}");
+        // After GTK's loop has run: one signal for the three changes.
+        g_timeout_add_full(0, 50, fun() {
+            note("signals after the loop {changes.get()}");
+            a.quit();
+            0
+        });
+    });
+    assert_eq(seen.get(), [
+        "child kept true hidden overflow 1",
+        "asks min 0x0 natural 200x100",
+        "120x300: across 80 down 0",
+        "50x40: across 150 down 60",
+        "300x300: across 0 down 0",
+        "signals so far 0",
+        "signals after the loop 1",
+    ]);
+}
