@@ -1,7 +1,8 @@
 // A clamp: one child, measured as the child is but kept within limits, never
 // below the child's own minimum; -1 is no limit; new limits re-measure; the
 // child goes when the clamp does; given more room than its maximum, it
-// places its child by its alignment. Needs a display.
+// places its child by its alignment, and takes the pointer only where its
+// child is. Needs a display.
 import std.env;
 import gtk {
     Application,
@@ -24,6 +25,7 @@ import gtk {
     lgtk_clamp_set_align,
     lgtk_clamp_set_child,
     lgtk_clamp_set_limits,
+    lgtk_widget_own_contains,
     on_finalized,
     run,
 };
@@ -139,6 +141,10 @@ fun a_clamp_places_its_child_by_its_alignment() {
         note("start {at(1, 1)}");
         note("center {at(3, 3)}");
         note("end {at(2, 2)}");
+        // Only the child's area is the clamp's: what's under the rest gets the pointer.
+        note(
+            "contains: child {lgtk_widget_own_contains(clamp, 250.0, 50.0)}, empty {lgtk_widget_own_contains(clamp, 50.0, 10.0)}",
+        );
         // Right to left, the start is the right.
         gtk_widget_set_direction(clamp, 2);
         note("start, right to left {at(1, 2)}");
@@ -150,6 +156,7 @@ fun a_clamp_places_its_child_by_its_alignment() {
         "start 1 at 0,0 100x20",
         "center 1 at 100,20 100x20",
         "end 1 at 200,40 100x20",
+        "contains: child 1, empty 0",
         "start, right to left 1 at 200,40 100x20",
     ]);
 }

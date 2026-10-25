@@ -4,7 +4,9 @@
  * the child's own minimum, since GTK can't draw a widget smaller than that.
  * Given more room than its maximum, it gives its child the maximum, placed
  * by the clamp's alignment (`lgtk_clamp_set_align`; fill and start put it at
- * the start, as before), as CSS's `max-width` with `margin: auto`. GTK has minimum sizes only (CSS min-width, size requests); this is
+ * the start, as before), as CSS's `max-width` with `margin: auto`. It takes
+ * the pointer only where its child is, so a clamp bigger than its child (a
+ * layer of an overlay) doesn't hide what's under it from clicks. GTK has minimum sizes only (CSS min-width, size requests); this is
  * how kivuli gives a node an exact size or a maximum. The clamp parents its
  * child itself and unparents it in dispose.
  */
@@ -110,6 +112,17 @@ static void lgtk_clamp_size_allocate(GtkWidget *widget, int width, int height, i
     gtk_widget_allocate(self->child, w, h, -1, at);
 }
 
+/* Only the child's area: picking asks this after the children, so a point
+ * outside the child falls through to whatever is under the clamp. */
+static gboolean lgtk_clamp_contains(GtkWidget *widget, double x, double y)
+{
+    LgtkClamp *self = LGTK_CLAMP(widget);
+    graphene_rect_t bounds;
+    if (self->child == NULL || !gtk_widget_compute_bounds(self->child, widget, &bounds))
+        return FALSE;
+    return graphene_rect_contains_point(&bounds, &GRAPHENE_POINT_INIT(x, y));
+}
+
 static void lgtk_clamp_dispose(GObject *object)
 {
     LgtkClamp *self = LGTK_CLAMP(object);
@@ -124,6 +137,7 @@ static void lgtk_clamp_class_init(LgtkClampClass *klass)
     widget_class->measure = lgtk_clamp_measure;
     widget_class->get_request_mode = lgtk_clamp_get_request_mode;
     widget_class->size_allocate = lgtk_clamp_size_allocate;
+    widget_class->contains = lgtk_clamp_contains;
     gtk_widget_class_set_css_name(widget_class, "clamp");
 }
 
@@ -177,4 +191,12 @@ void lgtk_clamp_set_align(GtkWidget *clamp, GtkAlign halign, GtkAlign valign)
     self->halign = halign;
     self->valign = valign;
     gtk_widget_queue_allocate(clamp);
+}
+
+/* A widget's own answer to whether it takes the pointer at (x, y): its class's
+ * `contains`, without gtk_widget_contains's check that it's mapped, so tests
+ * with windows never shown can ask. */
+gboolean lgtk_widget_own_contains(GtkWidget *widget, double x, double y)
+{
+    return GTK_WIDGET_GET_CLASS(widget)->contains(widget, x, y);
 }
