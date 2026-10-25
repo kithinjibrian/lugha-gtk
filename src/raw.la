@@ -286,6 +286,8 @@ public extern fun gtk_widget_get_can_focus(widget: GtkWidget): i32;
 public extern fun gtk_widget_get_focusable(widget: GtkWidget): i32;
 /** The widget's parent, `None` for one not in a container. */
 public extern fun gtk_widget_get_parent(widget: GtkWidget): Option<GtkWidget>;
+/** The window (`GtkRoot`) `widget` is in, through any depth of parents; `None` while it's in none. A window is its own root. */
+public extern fun gtk_widget_get_root(widget: GtkWidget): Option<GtkWidget>;
 public extern fun gtk_widget_get_visible(widget: GtkWidget): i32;
 /** Whether `widget` is laid out and drawn when its parent is, apart from its own visibility (`gboolean` as `i32`); containers like a fit set it. */
 public extern fun gtk_widget_get_child_visible(widget: GtkWidget): i32;

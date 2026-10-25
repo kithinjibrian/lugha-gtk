@@ -1,0 +1,39 @@
+// A widget's root: the window it's in, through any depth of parents, or
+// none while it's in no window. Needs a display.
+import std.env;
+import gtk {
+    Application,
+    gtk_application_window_new,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_widget_get_root,
+    gtk_window_set_child,
+    run,
+};
+
+@test
+fun a_widgets_root_is_its_window() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.root", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let outer = gtk_box_new(1, 0);
+        let inner = gtk_box_new(1, 0);
+        gtk_box_append(outer, inner);
+        let before = gtk_widget_get_root(inner).is_none();
+        gtk_window_set_child(window, outer);
+        seen.set([
+            "none before: {before}",
+            "the window after: {gtk_widget_get_root(inner) == Some(window)}",
+            "a window is its own: {gtk_widget_get_root(window) == Some(window)}",
+        ]);
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "none before: true",
+        "the window after: true",
+        "a window is its own: true",
+    ]);
+}
