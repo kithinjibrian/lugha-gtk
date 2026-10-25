@@ -1,0 +1,145 @@
+// A fit: a row (a horizontal GtkBox) and a "more" widget. It shows the row's
+// children from the start while they fit with "more" after them, hides the
+// rest, and shows "more" only then; its minimum is "more"'s; how many are
+// hidden is kept, and `hidden-changed` fires from an idle once it changes.
+// Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GrapheneRect,
+    GtkWidget,
+    connect_widget,
+    g_timeout_add_full,
+    gtk_application_window_new,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_widget_allocate,
+    gtk_widget_compute_bounds,
+    gtk_widget_get_child_visible,
+    gtk_widget_measure,
+    gtk_widget_set_direction,
+    gtk_widget_set_size_request,
+    gtk_window_set_child,
+    lgtk_fit_get_more,
+    lgtk_fit_get_row,
+    lgtk_fit_hidden,
+    lgtk_fit_new,
+    lgtk_fit_set_more,
+    lgtk_fit_set_row,
+    run,
+};
+
+/** The widget's minimum and natural size one way (0 across, 1 down). */
+fun measured(w: GtkWidget, orientation: i32): (i32, i32) {
+    let mut minimum: i32 = 0;
+    let mut natural: i32 = 0;
+    let mut minimum_baseline: i32 = 0;
+    let mut natural_baseline: i32 = 0;
+    gtk_widget_measure(
+        w,
+        orientation,
+        -1,
+        out minimum,
+        out natural,
+        out minimum_baseline,
+        out natural_baseline,
+    );
+    (minimum, natural)
+}
+
+/** Where `w` sits in `fit`, across. */
+fun x_in(w: GtkWidget, fit: GtkWidget): i32 {
+    let mut b = GrapheneRect { x: 0.0, y: 0.0, width: 0.0, height: 0.0 };
+    let ok = gtk_widget_compute_bounds(w, fit, out b);
+    if ok == 0 { -1 } else { b.x as i32 }
+}
+
+@test
+fun a_fit_shows_the_children_that_fit_and_more_after_them() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.fit", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let fit = lgtk_fit_new();
+        gtk_window_set_child(window, fit);
+        // Three children 50 x 20, 4 apart; "more" 20 x 20.
+        let row = gtk_box_new(0, 4);
+        let kids: GtkWidget[] = [gtk_box_new(0, 0), gtk_box_new(0, 0), gtk_box_new(0, 0)];
+        for k of kids {
+            gtk_widget_set_size_request(k, 50, 20);
+            gtk_box_append(row, k);
+        }
+        let more = gtk_box_new(0, 0);
+        gtk_widget_set_size_request(more, 20, 20);
+        lgtk_fit_set_row(fit, Some(row));
+        lgtk_fit_set_more(fit, Some(more));
+        note("kept {lgtk_fit_get_row(fit) == Some(row)} {lgtk_fit_get_more(fit) == Some(more)}");
+        note("asks {measured(fit, 0)} {measured(fit, 1)}");
+        let changes = Ref.new(0);
+        connect_widget(
+            fit,
+            "hidden-changed",
+            fun(w: GtkWidget) {
+                changes.update(fun(n) = n + 1);
+            },
+            0,
+        );
+        // Which children show, how many are hidden, and where "more" is.
+        let at = fun(width: i32): string {
+            gtk_widget_allocate(fit, width, 20, -1, None);
+            let mut shown = "";
+            for k of kids {
+                shown = "{shown}{gtk_widget_get_child_visible(k)}";
+            }
+            let more_at = if gtk_widget_get_child_visible(more) == 1 {
+                "{x_in(more, fit)}"
+            } else {
+                "hidden"
+            };
+            "{width}: shown {shown}, hidden {lgtk_fit_hidden(fit)}, more {more_at}"
+        };
+        note(at(300));
+        // Exactly the three: 50 + 4 + 50 + 4 + 50.
+        note(at(158));
+        // Two and "more": 50 + 4 + 50 + 4 + 20 = 128.
+        note(at(157));
+        note(at(128));
+        note(at(127));
+        note(at(10));
+        note(at(300));
+        // Right to left (an app's whole tree is): the start is the right,
+        // "more" left of what's shown.
+        gtk_widget_set_direction(fit, 2);
+        gtk_widget_set_direction(row, 2);
+        note("right to left {at(128)}, first at {x_in(kids[0], fit)}");
+        note("signals so far {changes.get()}");
+        g_timeout_add_full(0, 50, fun() {
+            note("signals after the loop {changes.get()}");
+            a.quit();
+            0
+        });
+    });
+    assert_eq(seen.get(), [
+        "kept true true",
+        "asks (20, 158) (20, 20)",
+        "300: shown 111, hidden 0, more hidden",
+        "158: shown 111, hidden 0, more hidden",
+        "157: shown 110, hidden 1, more 108",
+        "128: shown 110, hidden 1, more 108",
+        "127: shown 100, hidden 2, more 54",
+        "10: shown 000, hidden 3, more 0",
+        "300: shown 111, hidden 0, more hidden",
+        "right to left 128: shown 110, hidden 1, more 0, first at 78",
+        "signals so far 0",
+        "signals after the loop 1",
+    ]);
+}

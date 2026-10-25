@@ -287,6 +287,8 @@ public extern fun gtk_widget_get_focusable(widget: GtkWidget): i32;
 /** The widget's parent, `None` for one not in a container. */
 public extern fun gtk_widget_get_parent(widget: GtkWidget): Option<GtkWidget>;
 public extern fun gtk_widget_get_visible(widget: GtkWidget): i32;
+/** Whether `widget` is laid out and drawn when its parent is, apart from its own visibility (`gboolean` as `i32`); containers like a fit set it. */
+public extern fun gtk_widget_get_child_visible(widget: GtkWidget): i32;
 
 /** Whether a widget responds to the user; an insensitive one is greyed out. `gboolean` as `i32`. */
 public extern fun gtk_widget_set_sensitive(widget: GtkWidget, sensitive: i32);
@@ -912,6 +914,23 @@ public extern fun lgtk_clip_set_child(clip: GtkWidget, child: Option<GtkWidget>)
 public extern fun lgtk_clip_get_child(clip: GtkWidget): Option<GtkWidget>;
 /** How far the child stuck out at the last allocation, in pixels: across (`horizontal` 1, at the end side) or down (0, at the bottom). */
 public extern fun lgtk_clip_overflow(clip: GtkWidget, horizontal: i32): i32;
+/**
+ * A fit (src/c/fit.c): a row (a horizontal `GtkBox` with no padding or
+ * border of its own) and a "more" widget. The row's children show from the
+ * start while they fit, at their natural widths, and the rest are hidden
+ * (`child_visible`), with "more" after the last one shown; "more" is hidden
+ * when everything fits. Its minimum width is "more"'s. `hidden-changed`
+ * (connect with `connect_widget`) fires from an idle when the count changes.
+ */
+public extern fun lgtk_fit_new(): GtkWidget;
+/** Replaces the fit's row (the old one is unparented); `None` empties it. */
+public extern fun lgtk_fit_set_row(fit: GtkWidget, row: Option<GtkWidget>);
+public extern fun lgtk_fit_get_row(fit: GtkWidget): Option<GtkWidget>;
+/** Replaces the fit's "more" (the old one is unparented); `None` empties it. */
+public extern fun lgtk_fit_set_more(fit: GtkWidget, more: Option<GtkWidget>);
+public extern fun lgtk_fit_get_more(fit: GtkWidget): Option<GtkWidget>;
+/** How many of the row's children were hidden at the last allocation, counted from the end. */
+public extern fun lgtk_fit_hidden(fit: GtkWidget): i32;
 /** A clamp: one child, sized as the child is but kept within limits, never below the child's minimum. */
 public extern fun lgtk_clamp_new(): GtkWidget;
 /** Replaces the clamp's child (the old one is unparented); `None` empties it. */
