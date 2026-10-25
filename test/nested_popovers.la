@@ -1,0 +1,90 @@
+// What a popover inside a popover needs: a drop-down's own list found
+// (GTK keeps it private), and an action activated from a widget, which GTK
+// looks up through its ancestors, so the nearest group of that name answers.
+// Needs a display.
+import std.env;
+import gtk {
+    Application,
+    GSimpleAction,
+    GVariant,
+    GtkWidget,
+    connect_action,
+    g_action_map_add_action,
+    g_simple_action_group_new,
+    g_simple_action_group_unref,
+    g_simple_action_new,
+    g_simple_action_unref,
+    gtk_application_window_new,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_drop_down_new,
+    gtk_popover_popup,
+    gtk_widget_activate_action_variant,
+    gtk_widget_get_parent,
+    gtk_widget_get_visible,
+    gtk_widget_insert_action_group,
+    gtk_window_set_child,
+    lgtk_drop_down_popover,
+    run,
+};
+
+@test
+fun a_drop_downs_list_is_found_and_actions_reach_ancestors() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.nested_popovers", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let outer = gtk_box_new(1, 0);
+        let inner = gtk_box_new(1, 0);
+        let dropdown = gtk_drop_down_new(None, None);
+        gtk_box_append(inner, dropdown);
+        gtk_box_append(outer, inner);
+        gtk_window_set_child(window, outer);
+        match lgtk_drop_down_popover(dropdown) {
+            Some(list) => {
+                note(
+                    "list found, its parent the drop-down {gtk_widget_get_parent(list) == Some(dropdown)}",
+                );
+                gtk_popover_popup(list);
+                note("shown {gtk_widget_get_visible(list)}");
+            }
+            None => note("no list"),
+        }
+        note("a box has none {lgtk_drop_down_popover(outer).is_none()}");
+        // A group on `outer`: an action activated from the drop-down reaches it.
+        let group = g_simple_action_group_new();
+        let action = g_simple_action_new("ping", None);
+        connect_action(
+            action,
+            "activate",
+            fun(act: GSimpleAction, arg: Option<GVariant>) {
+                note("outer's ping");
+            },
+            0,
+        );
+        g_action_map_add_action(group, action);
+        g_simple_action_unref(action);
+        gtk_widget_insert_action_group(outer, "probe", Some(group));
+        g_simple_action_group_unref(group);
+        note("found {gtk_widget_activate_action_variant(dropdown, "probe.ping", None)}");
+        note("unknown {gtk_widget_activate_action_variant(dropdown, "probe.nothing", None)}");
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "list found, its parent the drop-down true",
+        "shown 1",
+        "a box has none true",
+        "outer's ping",
+        "found 1",
+        "unknown 0",
+    ]);
+}

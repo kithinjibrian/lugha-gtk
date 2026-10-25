@@ -100,3 +100,13 @@ const char *lgtk_drop_down_heading(GtkWidget *dropdown, guint position)
     GListModel *group = group_at(dropdown, position);
     return group ? g_object_get_data(G_OBJECT(group), HEADING) : NULL;
 }
+
+/* A drop-down's own list: the GtkPopover GTK keeps as its child (private in
+ * GtkDropDown), or NULL. For noticing when it closes (`closed`). */
+GtkWidget *lgtk_drop_down_popover(GtkWidget *dropdown)
+{
+    for (GtkWidget *c = gtk_widget_get_first_child(dropdown); c != NULL; c = gtk_widget_get_next_sibling(c))
+        if (GTK_IS_POPOVER(c))
+            return c;
+    return NULL;
+}

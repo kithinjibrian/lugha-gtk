@@ -569,6 +569,8 @@ public extern fun lgtk_drop_down_set_groups(dropdown: GtkWidget, groups: GtkGrou
 public extern fun lgtk_drop_down_clear_groups(dropdown: GtkWidget);
 /** The label of the choice at `position`, in a plain or grouped drop-down; `None` past the end. */
 public extern fun lgtk_drop_down_label(dropdown: GtkWidget, position: u32): Option<string>;
+/** The drop-down's own list, the popover GTK keeps private (src/c/groups.c); `None` for a widget with none. Connect its `closed` to notice a pick. */
+public extern fun lgtk_drop_down_popover(dropdown: GtkWidget): Option<GtkWidget>;
 /** The heading of the group holding `position`; `None` without groups or past the end. */
 public extern fun lgtk_drop_down_heading(dropdown: GtkWidget, position: u32): Option<string>;
 
@@ -796,6 +798,12 @@ public extern "g_signal_connect_data" fun connect_action(
     flags: i32,
 ): u64;
 public extern fun g_simple_action_group_new(): GSimpleActionGroup;
+/** Activates the action `name` (`group.action`) found from `widget` up through its ancestors, with `args` (`None`: none); `gboolean` as `i32`, 0 when none answers. */
+public extern fun gtk_widget_activate_action_variant(
+    widget: GtkWidget,
+    name: string,
+    args: Option<GVariant>,
+): i32;
 public extern fun g_action_map_add_action(action_map: GSimpleActionGroup, action: GSimpleAction);
 public extern "g_object_unref" fun g_simple_action_group_unref(group: GSimpleActionGroup);
 /** Makes `group`'s actions reachable from `widget` and its children as `name.action`. */
