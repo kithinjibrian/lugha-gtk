@@ -1,0 +1,146 @@
+// GTK's file dialog (PRP-001): what's set on a dialog and its filters reads
+// back with no display; with one, a choose that has nothing to show is
+// answered exactly once, after the call returns. Showing the real chooser is
+// checked by eye (kivuli's example): nothing here opens one.
+import std.env;
+import gtk {
+    Application,
+    g_cancellable_cancel,
+    g_cancellable_new,
+    g_cancellable_unref,
+    g_source_remove,
+    g_timeout_add_full,
+    gtk_application_window_new,
+    gtk_file_dialog_get_initial_name,
+    gtk_file_dialog_get_modal,
+    gtk_file_dialog_get_title,
+    gtk_file_dialog_new,
+    gtk_file_dialog_set_initial_name,
+    gtk_file_dialog_set_modal,
+    gtk_file_dialog_set_title,
+    gtk_file_dialog_unref,
+    gtk_file_filter_add_pattern,
+    gtk_file_filter_get_name,
+    gtk_file_filter_new,
+    gtk_file_filter_set_name,
+    gtk_file_filter_unref,
+    lgtk_file_dialog_add_filter,
+    lgtk_file_dialog_choose,
+    lgtk_file_dialog_filter,
+    lgtk_file_dialog_filter_count,
+    run,
+};
+
+fun has_display(): bool = env.get("DISPLAY").is_some() || env.get("WAYLAND_DISPLAY").is_some();
+
+@test
+fun a_dialog_reads_back_its_title_modal_and_initial_name() {
+    let dialog = gtk_file_dialog_new();
+    assert_eq(gtk_file_dialog_get_initial_name(dialog), None);
+    gtk_file_dialog_set_title(dialog, "Save the note");
+    gtk_file_dialog_set_modal(dialog, 1);
+    gtk_file_dialog_set_initial_name(dialog, Some("note.txt"));
+    assert_eq(gtk_file_dialog_get_title(dialog), Some("Save the note"));
+    assert_eq(gtk_file_dialog_get_modal(dialog), 1);
+    assert_eq(gtk_file_dialog_get_initial_name(dialog), Some("note.txt"));
+    gtk_file_dialog_unref(dialog);
+}
+
+@test
+fun filters_are_kept_in_order() {
+    let dialog = gtk_file_dialog_new();
+    assert_eq(lgtk_file_dialog_filter_count(dialog), 0);
+    for name of ["Pictures", "Text"] {
+        let filter = gtk_file_filter_new();
+        gtk_file_filter_set_name(filter, Some(name));
+        gtk_file_filter_add_pattern(filter, "*.png");
+        lgtk_file_dialog_add_filter(dialog, filter);
+        // The dialog's list keeps its own reference.
+        gtk_file_filter_unref(filter);
+    }
+    assert_eq(lgtk_file_dialog_filter_count(dialog), 2);
+    assert_eq(gtk_file_filter_get_name(lgtk_file_dialog_filter(dialog, 0)), Some("Pictures"));
+    assert_eq(gtk_file_filter_get_name(lgtk_file_dialog_filter(dialog, 1)), Some("Text"));
+    gtk_file_dialog_unref(dialog);
+}
+
+/**
+ * In one running application (`id`), starts a choose for each mode in
+ * `modes`, with an already-cancelled cancellable when `cancel`, and gives
+ * each one's answers, in order, and whether every first answer came after
+ * its call returned. Quits 300 ms after the last first answer, so a second
+ * would be seen; after 5 s otherwise.
+ */
+fun answers(id: string, modes: i32[], cancel: bool): (Option<string>[][], bool) {
+    let got: Ref<Option<string>[][]> = Ref.new([]);
+    let early = Ref.new(false);
+    run(id, fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let fallback = g_timeout_add_full(0, 5000, fun(): i32 {
+            a.quit();
+            0
+        });
+        let mut i = 0;
+        while i < modes.len {
+            let at = i;
+            got.update(fun(xs) {
+                let mut ys = xs;
+                ys.push([]);
+                ys
+            });
+            let returned = Ref.new(false);
+            let dialog = gtk_file_dialog_new();
+            let cancellable = g_cancellable_new();
+            if cancel {
+                g_cancellable_cancel(cancellable);
+            }
+            lgtk_file_dialog_choose(dialog, Some(window), modes[i], Some(cancellable), fun(
+                path: Option<string>,
+            ) {
+                if !returned.get() {
+                    early.set(true);
+                }
+                got.update(fun(xs) {
+                    let mut ys = xs;
+                    ys[at].push(path);
+                    ys
+                });
+                let all = got.get().len == modes.len && got.get().all(fun(x) = x.len > 0);
+                if all {
+                    g_timeout_add_full(0, 300, fun(): i32 {
+                        g_source_remove(fallback);
+                        a.quit();
+                        0
+                    });
+                }
+            });
+            returned.set(true);
+            // The helper holds the dialog while it's open.
+            gtk_file_dialog_unref(dialog);
+            g_cancellable_unref(cancellable);
+            i = i + 1;
+        }
+    });
+    (got.get(), !early.get())
+}
+
+@test
+fun a_cancelled_choose_shows_nothing_and_is_answered_none_once() {
+    if !has_display() {
+        skip("no display");
+    }
+    let none: Option<string>[] = [None];
+    assert_eq(
+        answers("org.lugha.test.choosing_cancelled", [0, 1, 2], true),
+        ([none, none, none], true),
+    );
+}
+
+@test
+fun a_bad_mode_is_answered_none_once_after_the_call() {
+    if !has_display() {
+        skip("no display");
+    }
+    let none: Option<string>[] = [None];
+    assert_eq(answers("org.lugha.test.choosing_bad_mode", [7], false), ([none], true));
+}

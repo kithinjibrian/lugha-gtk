@@ -650,6 +650,66 @@ public extern fun gtk_picture_get_file(picture: GtkWidget): Option<GFile>;
 /** The file's local path, allocated: read with `lgtk_cstring_text`, then `g_free` it; `None` when it has none. */
 public extern fun g_file_get_path(file: GFile): Option<OwnedText>;
 
+// The file dialog (GTK 4.10): the desktop's chooser for opening, saving or a
+// folder, through xdg-desktop-portal where there is one. Asynchronous: shown
+// with `lgtk_file_dialog_choose` (src/c/choosing.c), answered once.
+
+/** A `GtkFileDialog *`: what a file chooser will ask; not a widget. */
+public extern type GtkFileDialog;
+/** A `GtkFileFilter *`: a named set of patterns a chooser offers. */
+public extern type GtkFileFilter;
+/** A `GCancellable *`: a way to stop an asynchronous call. */
+public extern type GCancellable;
+
+public extern fun gtk_file_dialog_new(): GtkFileDialog;
+public extern "g_object_unref" fun gtk_file_dialog_unref(dialog: GtkFileDialog);
+/** The chooser's title. */
+public extern fun gtk_file_dialog_set_title(dialog: GtkFileDialog, title: string);
+public extern fun gtk_file_dialog_get_title(dialog: GtkFileDialog): Option<string>;
+/** Whether the chooser blocks its parent window while open (`gboolean` as `i32`); 1 by default. */
+public extern fun gtk_file_dialog_set_modal(dialog: GtkFileDialog, modal: i32);
+public extern fun gtk_file_dialog_get_modal(dialog: GtkFileDialog): i32;
+/** The name a save starts with; `None` for none. */
+public extern fun gtk_file_dialog_set_initial_name(dialog: GtkFileDialog, name: Option<string>);
+public extern fun gtk_file_dialog_get_initial_name(dialog: GtkFileDialog): Option<string>;
+
+public extern fun gtk_file_filter_new(): GtkFileFilter;
+public extern "g_object_unref" fun gtk_file_filter_unref(filter: GtkFileFilter);
+/** The name the chooser shows for the filter. */
+public extern fun gtk_file_filter_set_name(filter: GtkFileFilter, name: Option<string>);
+public extern fun gtk_file_filter_get_name(filter: GtkFileFilter): Option<string>;
+/** Adds a glob such as `"*.png"`: the filter shows files matching any of its patterns. */
+public extern fun gtk_file_filter_add_pattern(filter: GtkFileFilter, pattern: string);
+
+/** Appends `filter` to what the chooser offers (it keeps its own reference); the first is shown first. */
+public extern fun lgtk_file_dialog_add_filter(dialog: GtkFileDialog, filter: GtkFileFilter);
+/** How many filters the dialog has; 0 means it shows every file. */
+public extern fun lgtk_file_dialog_filter_count(dialog: GtkFileDialog): i32;
+/** The dialog's filter `i`, from 0 and below `lgtk_file_dialog_filter_count`; borrowed: don't unref. */
+public extern fun lgtk_file_dialog_filter(dialog: GtkFileDialog, i: i32): GtkFileFilter;
+/**
+ * Shows the chooser, `mode` 0 open, 1 save (GTK confirms an overwrite), 2 a
+ * folder, modal to `parent` (a window). `handler` is called exactly once, on
+ * the main loop and never during this call: with the chosen file's absolute
+ * local path, or `None` when the person cancelled, `cancellable` was
+ * cancelled, the chooser failed, the choice has no local path or `mode` is
+ * none of those. The dialog may be unref'd at once: the helper holds it.
+ */
+public extern fun lgtk_file_dialog_choose(
+    dialog: GtkFileDialog,
+    parent: Option<GtkWidget>,
+    mode: i32,
+    cancellable: Option<GCancellable>,
+    handler: fun(Option<string>, data),
+    user: data,
+    destroy: release,
+);
+
+public extern fun g_cancellable_new(): GCancellable;
+public extern "g_object_unref" fun g_cancellable_unref(cancellable: GCancellable);
+/** Cancels what `cancellable` was given to; its callbacks still come, with a cancelled error. */
+public extern fun g_cancellable_cancel(cancellable: GCancellable);
+
 // Images from bytes: a GBytes, decoded into a GdkTexture, shown by a picture or an image.
 
 /** A new `GBytes` holding a copy of `data`'s first `size` bytes: GLib keeps no Lugha memory. */
