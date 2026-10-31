@@ -530,6 +530,29 @@ public extern fun gtk_widget_set_direction(widget: GtkWidget, dir: i32);
 public extern fun gtk_window_set_focus(window: GtkWidget, focus: Option<GtkWidget>);
 /** Whether `window` is the active one (in front, with the desktop's keyboard focus); `gboolean` as `i32`. Notified as `notify::is-active`. */
 public extern fun gtk_window_is_active(window: GtkWidget): i32;
+/**
+ * Whether `window` is the one in front: shown (mapped), with its toplevel's
+ * GDK_TOPLEVEL_STATE_FOCUSED (on Wayland, the compositor's "activated"; on
+ * X11, the window manager's focus) (src/c/front.c); `gboolean` as `i32`.
+ * Unlike `gtk_window_is_active`, which follows keyboard focus on the window's
+ * own surface, it stays 1 while one of the window's own popovers is open.
+ */
+public extern fun lgtk_window_is_front(window: GtkWidget): i32;
+/**
+ * Calls `handler(window, front)` each time `window` comes to the front (1) or
+ * leaves it (0), as `lgtk_window_is_front` answers, never twice with the same
+ * value; the window's own popovers don't count (src/c/front.c). Follows the
+ * window's surface across realize and unrealize; hiding or unrealizing a
+ * window in front reports 0. Connected while realized, the current value is the
+ * starting point and isn't reported. `user` is released when the window is
+ * finalized.
+ */
+public extern fun lgtk_window_on_front(
+    window: GtkWidget,
+    handler: fun(GtkWidget, i32, data),
+    user: data,
+    destroy: release,
+);
 
 // Drop-downs over a string list, and scales (sliders).
 

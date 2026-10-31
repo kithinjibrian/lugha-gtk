@@ -1,0 +1,148 @@
+// Whether a window is the one in front, apart from keyboard focus: an
+// autohide popover (its own surface, which takes the keyboard while open)
+// makes is-active go false and back, but leaves the window in front, so
+// lgtk_window_on_front doesn't fire. Whether the compositor makes a test
+// window active varies; when it doesn't, the test says so and checks only
+// that the two agree. Needs a display; prints what it saw.
+//
+// Seen on GNOME Wayland with GTK 4.22.4 (and the same through XWayland,
+// GDK_BACKEND=x11): shown, active 1 and front 1, on_front [1]; opening the
+// popover notifies is-active 2 or 4 more times (false, true, ...) with
+// on_front unchanged; closing it notifies nothing more; hiding the window,
+// active 0 and front 0, on_front [1, 0] (GDK keeps FOCUSED on a hidden
+// window's surface, so being shown is part of being in front).
+import std.env;
+import gtk {
+    Application,
+    GParamSpec,
+    GtkWidget,
+    connect_notify,
+    g_timeout_add_full,
+    gtk_application_window_new,
+    gtk_box_new,
+    gtk_label_new,
+    gtk_popover_new,
+    gtk_popover_popdown,
+    gtk_popover_popup,
+    gtk_popover_set_child,
+    gtk_widget_set_parent,
+    gtk_widget_set_visible,
+    gtk_window_is_active,
+    gtk_window_present,
+    gtk_window_set_child,
+    gtk_window_set_default_size,
+    lgtk_window_is_front,
+    lgtk_window_on_front,
+    run,
+};
+
+@test
+fun a_window_never_shown_is_not_in_front() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    run("org.lugha.test.front_unshown", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let fired = Ref.new(0);
+        lgtk_window_on_front(window, fun(w: GtkWidget, front: i32) {
+            fired.update(fun(n) = n + 1);
+        });
+        seen.set(["front {lgtk_window_is_front(window)}, fired {fired.get()}"]);
+        a.quit();
+    });
+    assert_eq(seen.get(), ["front 0, fired 0"]);
+}
+
+@test
+fun a_popover_leaves_its_window_in_front() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    // What on_front reported, in order, and is-active's notifications.
+    let fronts: Ref<i32[]> = Ref.new([]);
+    let actives = Ref.new(0);
+    // (is_active, is_front) at each step, and the on_front count then.
+    let steps: Ref<string[]> = Ref.new([]);
+    let became_front = Ref.new(false);
+    let during_popover = Ref.new(-1);
+    run("org.lugha.test.front", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        gtk_window_set_default_size(window, 300, 200);
+        let box = gtk_box_new(1, 0);
+        gtk_window_set_child(window, box);
+        let popover = gtk_popover_new();
+        gtk_popover_set_child(popover, Some(gtk_label_new("a popover")));
+        gtk_widget_set_parent(popover, box);
+        lgtk_window_on_front(window, fun(w: GtkWidget, front: i32) {
+            fronts.update(fun(xs) {
+                let mut ys = xs;
+                ys.push(front);
+                ys
+            });
+        });
+        connect_notify(
+            window,
+            "notify::is-active",
+            fun(w: GtkWidget, p: Option<GParamSpec>) {
+                actives.update(fun(n) = n + 1);
+            },
+            0,
+        );
+        let step = fun(name: string) {
+            let line = "{name}: active {gtk_window_is_active(window)}, front {lgtk_window_is_front(window)}, on_front so far {fronts.get()}, is-active notifies {actives.get()}";
+            println(line);
+            steps.update(fun(xs) {
+                let mut ys = xs;
+                ys.push(line);
+                ys
+            });
+        };
+        gtk_window_present(window);
+        // Waits up to 3 s for the compositor to make the window active.
+        let waited = Ref.new(0);
+        g_timeout_add_full(0, 100, fun() {
+            waited.update(fun(n) = n + 1);
+            if gtk_window_is_active(window) == 0 && waited.get() < 30 {
+                return 1;
+            }
+            step("shown");
+            became_front.set(lgtk_window_is_front(window) == 1);
+            let before = fronts.get().len;
+            gtk_popover_popup(popover);
+            g_timeout_add_full(0, 500, fun() {
+                step("popover open");
+                gtk_popover_popdown(popover);
+                g_timeout_add_full(0, 500, fun() {
+                    step("popover closed");
+                    during_popover.set(fronts.get().len - before);
+                    gtk_widget_set_visible(window, 0);
+                    g_timeout_add_full(0, 300, fun() {
+                        step("hidden");
+                        a.quit();
+                        0
+                    });
+                    0
+                });
+                0
+            });
+            0
+        });
+    });
+    let lines = steps.get();
+    assert_eq(lines.len, 4);
+    if became_front.get() {
+        // In front once shown: the two agree, and the popover changed nothing.
+        assert(lines[0].contains("active 1, front 1"));
+        assert_eq(during_popover.get(), 0);
+        assert(lines[2].contains("front 1"));
+        // Hidden: GDK keeps the surface's FOCUSED, but a hidden window isn't in front.
+        assert(lines[3].contains("front 0"));
+        assert_eq(fronts.get(), [1, 0]);
+    } else {
+        println(
+            "the compositor didn't make the test window active; checked only that the two agree",
+        );
+        assert(lines[0].contains("active 0, front 0"));
+    }
+}
