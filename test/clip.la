@@ -1,13 +1,19 @@
 // A clip: one child, asking for no minimum size, so it never pushes its
 // parent; the child gets at least its own minimum, at the top start, and what
 // sticks out is cut off and measured; `overflow-changed` fires from an idle
-// once the overflow changes. Needs a display.
+// once the overflow changes. Measured for a size the other way, it never
+// measures its child for less than the child needs that way. Needs a display.
 import std.env;
 import gtk {
     Application,
     GtkWidget,
     connect_widget,
+    g_log_set_always_fatal,
     gtk_application_window_new,
+    gtk_box_append,
+    gtk_box_new,
+    gtk_box_remove,
+    gtk_label_set_wrap,
     g_timeout_add_full,
     gtk_widget_allocate,
     gtk_widget_get_overflow,
@@ -23,7 +29,10 @@ import gtk {
 };
 
 /** The widget's minimum and natural size one way (0 across, 1 down). */
-fun measured(w: GtkWidget, orientation: i32): (i32, i32) {
+fun measured(w: GtkWidget, orientation: i32): (i32, i32) = measured_for(w, orientation, -1);
+
+/** The widget's minimum and natural size one way (0 across, 1 down), for `for_size` the other way. */
+fun measured_for(w: GtkWidget, orientation: i32, for_size: i32): (i32, i32) {
     let mut minimum: i32 = 0;
     let mut natural: i32 = 0;
     let mut minimum_baseline: i32 = 0;
@@ -31,7 +40,7 @@ fun measured(w: GtkWidget, orientation: i32): (i32, i32) {
     gtk_widget_measure(
         w,
         orientation,
-        -1,
+        for_size,
         out minimum,
         out natural,
         out minimum_baseline,
@@ -98,5 +107,53 @@ fun a_clip_asks_for_nothing_and_measures_what_sticks_out() {
         "300x300: across 0 down 0",
         "signals so far 0",
         "signals after the loop 1",
+    ]);
+}
+
+@test
+fun a_clip_measures_its_child_for_no_less_than_its_minimum() {
+    if env.get("DISPLAY").is_none() && env.get("WAYLAND_DISPLAY").is_none() {
+        skip("no display");
+    }
+    let seen: Ref<string[]> = Ref.new([]);
+    let note = fun(s: string) {
+        seen.update(fun(xs) {
+            let mut ys = xs;
+            ys.push(s);
+            ys
+        });
+    };
+    run("org.lugha.test.clip_child_minimum", fun(a: Application) {
+        let window = gtk_application_window_new(a.handle());
+        let holder = gtk_box_new(1, 0);
+        gtk_window_set_child(window, holder);
+        // GTK warns when a widget is measured for less than its minimum the
+        // other way ("Trying to measure … for width of 0, but it needs at
+        // least 518"): from here such a warning aborts, failing the test.
+        let old = g_log_set_always_fatal(16);
+        // A child at least 518 x 264. GTK checks only widgets whose size
+        // depends the other way: the wrapping label makes the box one.
+        let child = gtk_box_new(0, 0);
+        gtk_widget_set_size_request(child, 518, 264);
+        let words = gtk_label_new("a b");
+        gtk_label_set_wrap(words, 1);
+        gtk_box_append(child, words);
+        let clip = lgtk_clip_new();
+        lgtk_clip_set_child(clip, Some(child));
+        gtk_box_append(holder, clip);
+        // For less than the child's minimum the other way: the clip still
+        // asks for nothing, and would like the child's size at that minimum.
+        note("height for width 0 {measured_for(clip, 1, 0)}");
+        note("width for height 100 {measured_for(clip, 0, 100)}");
+        // For more: as before.
+        note("height for width 600 {measured_for(clip, 1, 600)}");
+        g_log_set_always_fatal(old);
+        gtk_box_remove(holder, clip);
+        a.quit();
+    });
+    assert_eq(seen.get(), [
+        "height for width 0 (0, 264)",
+        "width for height 100 (0, 518)",
+        "height for width 600 (0, 264)",
     ]);
 }

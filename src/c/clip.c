@@ -31,8 +31,22 @@ static void lgtk_clip_measure(GtkWidget *widget, GtkOrientation orientation, int
 {
     LgtkClip *self = LGTK_CLIP(widget);
     int child_min = 0, child_nat = 0;
-    if (self->child != NULL)
-        gtk_widget_measure(self->child, orientation, for_size, &child_min, &child_nat, NULL, NULL);
+    if (self->child != NULL) {
+        /* Its own minimum of 0 lets a parent measure it for any size the
+         * other way, even 0; the child is measured for no less than its own
+         * minimum that way, as size_allocate gives it: GTK warns when a
+         * widget is measured for less. */
+        int child_for = for_size;
+        if (child_for >= 0) {
+            int other_min = 0, other_nat = 0;
+            gtk_widget_measure(self->child,
+                               orientation == GTK_ORIENTATION_HORIZONTAL ? GTK_ORIENTATION_VERTICAL
+                                                                         : GTK_ORIENTATION_HORIZONTAL,
+                               -1, &other_min, &other_nat, NULL, NULL);
+            child_for = MAX(child_for, other_min);
+        }
+        gtk_widget_measure(self->child, orientation, child_for, &child_min, &child_nat, NULL, NULL);
+    }
     /* The point of a clip: no minimum of its own; it would like the child's natural size. */
     *minimum = 0;
     *natural = child_nat;
