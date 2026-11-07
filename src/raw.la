@@ -380,6 +380,13 @@ public extern "g_signal_connect_data" fun connect_widget(
     flags: i32,
 ): u64;
 
+/**
+ * Makes the log levels in `mask` (GLogLevelFlags: 16 is G_LOG_LEVEL_WARNING)
+ * abort the program, besides the always-fatal ones; returns the old mask, to
+ * put back. For tests: a GTK warning fails the test instead of only printing.
+ */
+public extern fun g_log_set_always_fatal(mask: i32): i32;
+
 // GLib timers and clocks.
 
 /**

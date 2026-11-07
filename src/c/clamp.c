@@ -45,11 +45,17 @@ static void lgtk_clamp_measure(GtkWidget *widget, GtkOrientation orientation, in
     int child_min = 0, child_nat = 0;
     if (self->child != NULL) {
         /* Measured for the size the child will get the other way: at most
-         * the other way's maximum (a wrapping label is taller when narrower). */
+         * the other way's maximum (a wrapping label is taller when narrower),
+         * but never below the child's own minimum that way, as size_allocate
+         * gives it; GTK warns when a widget is measured for less. */
         int other_hi = across ? self->max_height : self->max_width;
         int child_for = for_size;
-        if (child_for >= 0 && other_hi >= 0 && child_for > other_hi)
-            child_for = other_hi;
+        if (child_for >= 0 && other_hi >= 0 && child_for > other_hi) {
+            int other_min = 0, other_nat = 0;
+            gtk_widget_measure(self->child, across ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL,
+                               -1, &other_min, &other_nat, NULL, NULL);
+            child_for = MAX(other_hi, other_min);
+        }
         gtk_widget_measure(self->child, orientation, child_for, &child_min, &child_nat, NULL, NULL);
     }
     /* Never below the child's minimum; the minimum limit raises it. */
